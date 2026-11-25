@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Search · Paperproof{% endblock %}
+{% block content %}
+<header class="page-head">
+  <h1>Search the library</h1>
+  <p class="lede">Every passage in every document, ranked by keyword and meaning. Results open on the page that contains them.</p>
+</header>
+
+<form class="search-form" method="get" action="/search" role="search">
+  <input type="search" name="q" value="{{ query }}" placeholder="Try “subletting without consent”" aria-label="Search documents" autofocus>
+  <button class="btn btn-primary" type="submit">Search</button>
+</form>
+
+{% if query %}
+<p class="result-count">{{ count }} passage{% if count != 1 %}s{% endif %} for “{{ query }}”</p>
+{% for r in results %}
+<article class="result">
+  <a class="result-tab" href="{{ r.source_url }}" title="Open page {{ r.page }}">p. {{ r.page }}</a>
+  <div class="result-body">
+    <h2><a href="{{ r.source_url }}">{{ r.title }}</a></h2>
+    <p class="result-meta">{{ r.heading or "No section heading" }} <span class="sep">/</span> {{ r.filename }}</p>
+    <p class="result-snippet">{{ r.snippet|highlight(terms)|safe }}</p>
+  </div>
+</article>
+{% else %}
+<div class="empty-panel search-empty">
+  <h3>No passages matched.</h3>
+  <p>Try a shorter phrase, or one of these common lease questions.</p>
+  <div class="suggestions">
+    <a class="suggestion" href="/search?q=subletting without consent">subletting without consent</a>
+    <a class="suggestion" href="/search?q=security deposit return">security deposit return</a>
+    <a class="suggestion" href="/search?q=renewal option">renewal option</a>
+    <a class="suggestion" href="/search?q=late fee">late fee</a>
+  </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="search-prompt">
+  <p>Search across leases, clauses, and page text. Results are passages, not generated summaries.</p>
+  <div class="suggestions">
+    <a class="suggestion" href="/search?q=subletting without consent">subletting without consent</a>
+    <a class="suggestion" href="/search?q=security deposit return">security deposit return</a>
+    <a class="suggestion" href="/search?q=renewal option">renewal option</a>
+    <a class="suggestion" href="/search?q=late fee">late fee</a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Paperproof · Terms with receipts{% endblock %}
+{% block content %}
+{% if notice or error %}
+<div class="flash-stack">
+  {% if notice %}
+  <div class="flash flash-ok">
+    <span>{{ notice }}</span>
+    <button class="flash-close" type="button" data-dismiss-flash aria-label="Dismiss notification">&times;</button>
+  </div>
+  {% endif %}
+  {% if error %}
+  <div class="flash flash-error">
+    <span>{{ error }}</span>
+    <button class="flash-close" type="button" data-dismiss-flash aria-label="Dismiss error">&times;</button>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<section class="hero">
+  <div class="hero-copy">
+    <h1>Terms with receipts.</h1>
+    <p class="lede">Paperproof pulls the key terms out of a lease, then proves each one against the exact clause and page. Nothing is shown until the quote is verified.</p>
+
+    <form class="intake" method="post" action="/documents" enctype="multipart/form-data" id="upload-form">
+      <label class="dropzone" id="dropzone" for="file-input">
+        <span class="drop-plus" aria-hidden="true">+</span>
+        <span class="drop-copy">
+          <strong>Add lease PDFs</strong>
+          <span>Drop files here or choose from your computer. 50 MB max each.</span>
+        </span>
+        <input id="file-input" type="file" name="files" accept="application/pdf,.pdf" multiple>
+      </label>
+      <div class="intake-actions">
+        <button class="btn btn-primary" type="submit">Ingest documents</button>
+        <span class="intake-note" id="file-count">No files chosen</span>
+      </div>
+    </form>
+
+    {% if empty %}
+    <form method="post" action="/samples" class="sample-form">
+      <button class="link-btn" type="submit">No files handy? Load five sample leases</button>
+    </form>
+    {% endif %}
+  </div>
+
+  <div class="hero-paper" aria-hidden="true">
+    <div class="paper-sheet">
+      <div class="paper-runhead">Residential Lease Agreement</div>
+      <h2>7. Subletting and Assignment</h2>
+      <p>Tenant may sublet the Premises only with <mark class="evidence">Landlord's prior written consent, which consent shall not be unreasonably withheld</mark>, conditioned, or delayed.</p>
+      <div class="paper-tab"><span>p. 4</span> verified</div>
+      <div class="paper-foot">14 Alder Court / Page 4 of 4</div>
+    </div>
+  </div>
+</section>
+
+{% if not empty %}
+<div class="index-line">
+  <div class="index-item"><span class="index-number">{{ stats.documents }}</span><span class="index-label">documents</span></div>
+  <div class="index-item"><span class="index-number">{{ stats.pages }}</span><span class="index-label">pages</span></div>
+  <div class="index-item"><span class="index-number">{{ stats.passages }}</span><span class="index-label">passages</span></div>
+  <div class="index-item"><span class="index-number">{{ stats.pending }}</span><span class="index-label">ready to review</span></div>
+</div>
+
+<section class="recent">
+  <header class="section-head">
+    <h2>Recently added</h2>
+    <span class="mode-note">{{ "LLM extraction" if llm else "Rule baseline" }}{% if llm %} / {{ mode }}{% endif %}</span>
+  </header>
+  <div class="table-wrap">
+    <table class="ledger">
+      <thead>
+        <tr>
+          <th>Document</th>
+          <th class="num">Pages</th>
+          <th>Review</th>
+          <th class="date">Added</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in documents %}
+        <tr>
+          <td>
+            <a class="doc-link" href="/documents/{{ item.id }}" title="{{ item.filename }}">{{ item.display_title }}</a>
+            {% if item.subtitle %}<span class="doc-sub">{{ item.subtitle }}</span>{% endif %}
+          </td>
+          <td class="num">{{ item.page_count }}</td>
+          <td>
+            {% if item.fields == 0 %}
+              <span class="status status-none"><span class="dot"></span>Not extracted</span>
+            {% elif item.pending > 0 %}
+              <span class="status status-pending"><span class="dot"></span>{{ item.pending }} ready</span>
+            {% else %}
+              <span class="status status-approved"><span class="dot"></span>{{ item.approved }} approved</span>
+            {% endif %}
+          </td>
+          <td class="date">{{ item.created_at|human_date }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% else %}
+<p class="empty-note">The library is empty. Add a PDF above, or load the sample leases to walk through the review flow with real citations.</p>
+{% endif %}
+{% endblock %}

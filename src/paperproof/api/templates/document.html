@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}{{ doc.title }} · Paperproof{% endblock %}
+{% block content %}
+{% if notice or error %}
+<div class="flash-stack">
+  {% if notice %}
+  <div class="flash flash-ok">
+    <span>{{ notice }}</span>
+    <button class="flash-close" type="button" data-dismiss-flash aria-label="Dismiss notification">&times;</button>
+  </div>
+  {% endif %}
+  {% if error %}
+  <div class="flash flash-error">
+    <span>{{ error }}</span>
+    <button class="flash-close" type="button" data-dismiss-flash aria-label="Dismiss error">&times;</button>
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+
+<a class="crumb" href="/">Documents</a>
+
+<header class="doc-head">
+  <div>
+    <h1>{{ doc.display_title }}</h1>
+    <p class="doc-meta">
+      {% if doc.subtitle %}<span>{{ doc.subtitle }}</span><span class="sep">/</span>{% endif %}
+      <span>{{ doc.filename }}</span>
+      <span class="sep">/</span>
+      <span>{{ doc.page_count }} pages</span>
+      <span class="sep">/</span>
+      <span>Added {{ doc.created_at|human_date }}</span>
+    </p>
+  </div>
+  <div class="doc-actions">
+    <span class="mode-note">{{ "LLM / " ~ mode if llm else "Rule baseline" }}</span>
+    {% if not doc.needs_ocr %}
+    <form method="post" action="/documents/{{ doc.id }}/extract">
+      <input type="hidden" name="template_id" value="lease">
+      <button class="btn {{ 'btn-primary' if not has_extractions else '' }}" type="submit">
+        {{ "Extract lease terms" if not has_extractions else "Run extraction again" }}
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</header>
+
+{% if doc.needs_ocr %}
+<div class="notice-band notice-warn">
+  <strong>Scanned PDF.</strong> No text layer was detected, so extraction is paused. The pages still render for review. Add OCR to unlock extraction.
+</div>
+{% elif has_extractions %}
+<div class="notice-band {% if totals.failed %}notice-warn{% else %}notice-ok{% endif %}">
+  <strong>{{ totals.verified }} of {{ totals.total }} fields cited.</strong>
+  {% if totals.pending %}{{ totals.pending }} ready to review.{% endif %}
+  {% if totals.approved %}{{ totals.approved }} approved.{% endif %}
+  {% if totals.abstained %}{{ totals.abstained }} not addressed in the document.{% endif %}
+  {% if totals.failed %}{{ totals.failed }} unverified and hidden.{% endif %}
+</div>
+{% endif %}
+
+<div class="desk" data-desk data-doc="{{ doc.id }}" data-page-count="{{ doc.page_count }}" data-page="{{ viewer.page }}">
+  <section class="records" aria-label="Extracted terms">
+    <div class="records-head">
+      <h2>Extracted terms</h2>
+      <span class="records-count">{% if has_extractions %}{{ totals.approved }} of {{ totals.total }} approved{% else %}No fields yet{% endif %}</span>
+    </div>
+
+    {% if not has_extractions %}
+    <div class="empty-panel">
+      <h3>{% if doc.needs_ocr %}No text layer to extract.{% else %}Nothing extracted yet.{% endif %}</h3>
+      <p>
+        {% if doc.needs_ocr %}
+        This file is a scan. Paperproof can show the page, but it will not invent a quote from pixels.
+        {% else %}
+        Run the lease template to pull seven terms. Each one will be quoted, matched to the page, and held for your review.
+        {% endif %}
+      </p>
+      {% if not doc.needs_ocr %}
+      <form method="post" action="/documents/{{ doc.id }}/extract">
+        <input type="hidden" name="template_id" value="lease">
+        <button class="btn btn-primary" type="submit">Extract lease terms</button>
+      </form>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% for r in records %}
+    <article
+      class="record{% if r.is_selected %} is-selected{% endif %}"
+      id="record-{{ r.field }}"
+      data-record
+      data-field="{{ r.field }}"
+      data-page="{{ r.page or 1 }}"
+      data-src="/documents/{{ doc.id }}/pages/{{ r.page or 1 }}.png"
+      data-boxes="{{ r.boxes_json }}"
+      data-quote="{{ r.quote or '' }}"
+      data-printed="{{ r.printed_label or '' }}"
+      data-page-note="{{ r.page_note or '' }}"
+    >
+      <button class="record-select" type="button" data-select {% if not r.has_citation %}disabled{% endif %}>
+        <span class="record-label">{{ r.label }}</span>
+        <span class="record-value{% if r.long_value %} is-long{% endif %}">{{ r.value_display }}</span>
+      </button>
+
+      {% if r.quote %}
+      <blockquote class="record-quote">“{{ r.quote }}”</blockquote>
+      {% endif %}
+
+      <div class="record-foot">
+        <div class="record-verdict">
+          <span class="status status-{{ r.status }}"><span class="dot"></span>{{ r.status|status_label }}</span>
+          {% if r.has_citation %}
+          <a class="cite-tab" href="{{ r.source_url }}" title="{{ r.page_note }}">p. {{ r.printed_label }}</a>
+          {% endif %}
+          {% if r.verifier == 'fuzzy' %}
+          <span class="faint">Fuzzy match {{ r.confidence_pct }}%</span>
+          {% endif %}
+        </div>
+        {% if r.status == 'pending' %}
+        <div class="record-actions">
+          <form method="post" action="/extractions/{{ r.id }}/review">
+            <input type="hidden" name="decision" value="approved">
+            <button class="btn btn-small btn-approve" type="submit">Approve</button>
+          </form>
+          <form method="post" action="/extractions/{{ r.id }}/review">
+            <input type="hidden" name="decision" value="rejected">
+            <button class="btn btn-small btn-reject" type="submit">Reject</button>
+          </form>
+        </div>
+        {% endif %}
+      </div>
+
+      {% if r.reason and r.status in ('abstained', 'failed') %}
+      <p class="record-reason">{{ r.reason }}</p>
+      {% endif %}
+    </article>
+    {% endfor %}
+  </section>
+
+  <aside class="viewer" id="viewer" aria-label="Source page">
+    <div class="viewer-bar">
+      <span>Source page</span>
+      <div class="pager">
+        <button type="button" data-page-prev aria-label="Previous page">&larr;</button>
+        <span class="mono" id="page-counter">{{ viewer.page }} / {{ viewer.page_count }}</span>
+        <button type="button" data-page-next aria-label="Next page">&rarr;</button>
+      </div>
+    </div>
+    <div class="viewer-caption">
+      <div class="caption-head">
+        <span class="cite-tab" id="caption-tab">p. {{ viewer.printed_label or viewer.page }}</span>
+        <span class="mono faint" id="caption-note">{{ viewer.page_note }}</span>
+      </div>
+      <p class="viewer-quote" id="caption-quote" aria-live="polite">
+        {% if viewer.quote %}“{{ viewer.quote }}”{% else %}Select a cited term to see its clause.{% endif %}
+      </p>
+    </div>
+    <div class="page-stage">
+      <div class="page-frame">
+        <img id="page-image" src="{{ viewer.image_url }}" width="{{ viewer.page_width }}" height="{{ viewer.page_height }}" alt="Page {{ viewer.page }} of {{ doc.title }}">
+        <div class="highlights" id="highlights">
+          {% for box in viewer.boxes %}
+          <span class="highlight" style="left: {{ box.left }}%; top: {{ box.top }}%; width: {{ box.width }}%; height: {{ box.height }}%"></span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<p class="desk-note">Every quote above is matched against the PDF text layer before it is shown. If a quote cannot be found, the field is marked unverified and no citation is drawn.</p>
+{% endblock %}

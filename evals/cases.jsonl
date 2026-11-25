@@ -1,0 +1,29 @@
+{"doc": "lease_01_alder_court.pdf", "field": "term_months", "value": 24}
+{"doc": "lease_01_alder_court.pdf", "field": "monthly_rent", "value": 2400}
+{"doc": "lease_01_alder_court.pdf", "field": "security_deposit", "value": 4800}
+{"doc": "lease_01_alder_court.pdf", "field": "notice_days", "value": 30}
+{"doc": "lease_01_alder_court.pdf", "field": "subletting", "value": "allowed_with_consent"}
+{"doc": "lease_01_alder_court.pdf", "field": "renewal_option", "contains": "twelve (12) months"}
+{"doc": "lease_01_alder_court.pdf", "field": "late_fee", "value": 150}
+{"doc": "lease_02_beacon_street.pdf", "field": "term_months", "value": 12}
+{"doc": "lease_02_beacon_street.pdf", "field": "monthly_rent", "value": 3150}
+{"doc": "lease_02_beacon_street.pdf", "field": "security_deposit", "value": 3000}
+{"doc": "lease_02_beacon_street.pdf", "field": "notice_days", "value": 60}
+{"doc": "lease_02_beacon_street.pdf", "field": "subletting", "value": "prohibited"}
+{"doc": "lease_02_beacon_street.pdf", "field": "renewal_option", "contains": "No renewal option"}
+{"doc": "lease_02_beacon_street.pdf", "field": "late_fee", "value": 75}
+{"doc": "lease_03_juniper_way.pdf", "field": "term_months", "value": 36}
+{"doc": "lease_03_juniper_way.pdf", "field": "monthly_rent", "value": 2850}
+{"doc": "lease_03_juniper_way.pdf", "field": "security_deposit", "value": 7200}
+{"doc": "lease_03_juniper_way.pdf", "field": "notice_days", "value": 90}
+{"doc": "lease_03_juniper_way.pdf", "field": "subletting", "value": "allowed"}
+{"doc": "lease_03_juniper_way.pdf", "field": "renewal_option", "contains": "two (2) consecutive options"}
+{"doc": "lease_03_juniper_way.pdf", "field": "late_fee", "value": 100}
+{"doc": "lease_04_marlowe_terrace.pdf", "field": "term_months", "value": 18}
+{"doc": "lease_04_marlowe_terrace.pdf", "field": "monthly_rent", "value": 2600}
+{"doc": "lease_04_marlowe_terrace.pdf", "field": "security_deposit", "value": 3600}
+{"doc": "lease_04_marlowe_terrace.pdf", "field": "notice_days", "abstain": true}
+{"doc": "lease_04_marlowe_terrace.pdf", "field": "subletting", "abstain": true}
+{"doc": "lease_04_marlowe_terrace.pdf", "field": "renewal_option", "abstain": true}
+{"doc": "lease_04_marlowe_terrace.pdf", "field": "late_fee", "value": 125}
+{"doc": "lease_05_scanned_studio.pdf", "field": "term_months", "abstain": true}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Page {{ page }} · {{ doc.title }} · Paperproof{% endblock %}
+{% block content %}
+<a class="crumb" href="{{ back_url }}">Back to document</a>
+
+<header class="source-head">
+  <div>
+    <h1>{{ display_title }}</h1>
+    <p class="doc-meta">
+      {% if subtitle %}<span>{{ subtitle }}</span><span class="sep">/</span>{% endif %}
+      {{ page_note }} <span class="sep">/</span> Page {{ page }} of {{ page_count }}
+    </p>
+  </div>
+  <div class="source-nav">
+    <a class="btn btn-small" href="?page={{ prev_page }}">&larr; Previous</a>
+    <a class="btn btn-small" href="?page={{ next_page }}">Next &rarr;</a>
+  </div>
+</header>
+
+<div class="source-grid">
+  <div class="source-stage">
+    <div class="page-frame page-frame-wide">
+      <img src="{{ image_url }}" width="{{ page_width }}" height="{{ page_height }}" alt="Page {{ page }} of {{ doc.title }}">
+      <div class="highlights">
+        {% for box in boxes %}
+        <span class="highlight" style="left: {{ box.left }}%; top: {{ box.top }}%; width: {{ box.width }}%; height: {{ box.height }}%"></span>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <aside class="source-aside">
+    {% if verified %}
+    <p class="verified-line"><span class="dot"></span>Verified on the page</p>
+    <blockquote class="source-quote">“{{ quote }}”</blockquote>
+    <p class="mono faint">{{ page_note }}</p>
+    {% elif requested_quote %}
+    <span class="status status-failed"><span class="dot"></span>Not verifiable</span>
+    <p class="source-note">That excerpt could not be found on this page, so no highlight is drawn. The page is still shown for reference.</p>
+    {% else %}
+    <p class="source-note">Full page view. Use the arrows to move through the document, or return to the extracted terms.</p>
+    {% endif %}
+    <a class="btn btn-small source-back" href="{{ back_url }}">Back to document</a>
+  </aside>
+</div>
+{% endblock %}

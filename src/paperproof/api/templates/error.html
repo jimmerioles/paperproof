@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ status }} · Paperproof{% endblock %}
+{% block content %}
+<div class="error-page">
+  <p class="error-code">HTTP {{ status }}</p>
+  <h1>{% if status == 404 %}Page not found.{% else %}Something went wrong.{% endif %}</h1>
+  <p>{{ detail }}</p>
+  <p><a class="btn" href="/">Back to documents</a></p>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Audit log · Paperproof{% endblock %}
+{% block content %}
+<header class="page-head">
+  <h1>Audit log</h1>
+  <p class="lede">Every ingest, extraction run, and review decision is recorded with a timestamp. This is the paper trail behind the citations.</p>
+</header>
+
+{% if events %}
+<div class="table-wrap">
+  <table class="ledger audit-table">
+    <thead>
+      <tr>
+        <th>When</th>
+        <th>Actor</th>
+        <th>Action</th>
+        <th>Detail</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for event in events %}
+      <tr>
+        <td class="audit-time">{{ event.at|replace("T", " ") }}</td>
+        <td>{{ event.actor }}</td>
+        <td>
+          <span class="audit-action">{{ event.action }}</span>
+          {% if event.entity %}<span class="audit-entity">{{ event.entity }}</span>{% endif %}
+        </td>
+        <td class="audit-detail">{{ event.detail_text or "No detail" }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="empty-note">No events yet. Ingest a document to start the log.</p>
+{% endif %}
+{% endblock %}
