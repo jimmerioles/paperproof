@@ -77,6 +77,8 @@ def _file_count(directory: Path, suffix: str) -> int:
 
 def create_backup(settings: Settings, out_dir: Path, force: bool = False) -> BackupInfo:
     out = Path(out_dir)
+    if out == settings.data_dir or out in settings.data_dir.parents:
+        raise ValueError("Backup directory must not be the data directory or one of its parents.")
     for protected in (settings.upload_dir, settings.render_dir):
         if out == protected or protected in out.parents:
             raise ValueError("Backup directory must be outside uploads and renders.")

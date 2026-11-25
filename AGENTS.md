@@ -9,7 +9,7 @@ uv sync                     # install
 uv run paperproof demo      # seed ./data with the sample corpus
 uv run paperproof auth set-password  # create the local admin
 uv run paperproof serve     # http://127.0.0.1:8000
-uv run pytest               # 63 tests
+uv run pytest               # 64 tests
 uv run ruff check .         # lint
 uv run ruff format .        # format
 uv run pyright              # type check

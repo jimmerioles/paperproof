@@ -71,6 +71,11 @@ def test_restore_refuses_a_non_empty_target(
     assert (target / "keep.txt").read_text() == "do not overwrite"
 
 
+def test_backup_refuses_the_data_directory(settings: Settings) -> None:
+    with pytest.raises(ValueError, match="data directory"):
+        create_backup(settings, settings.data_dir)
+
+
 def test_restore_drill_passes() -> None:
     result = run_restore_drill()
     assert result.passed is True
