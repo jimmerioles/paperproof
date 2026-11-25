@@ -13,7 +13,7 @@ from typing import Any
 
 from paperproof.config import Settings
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS documents (
@@ -25,6 +25,9 @@ CREATE TABLE IF NOT EXISTS documents (
     page_count INTEGER NOT NULL,
     status TEXT NOT NULL,
     needs_ocr INTEGER NOT NULL DEFAULT 0,
+    ocr_pages INTEGER NOT NULL DEFAULT 0,
+    ocr_confidence REAL,
+    ocr_low_confidence INTEGER NOT NULL DEFAULT 0,
     error TEXT,
     meta_json TEXT NOT NULL DEFAULT '{}',
     created_at TEXT NOT NULL
@@ -38,6 +41,9 @@ CREATE TABLE IF NOT EXISTS pages (
     height REAL NOT NULL,
     text TEXT NOT NULL,
     words_json TEXT NOT NULL,
+    ocr INTEGER NOT NULL DEFAULT 0,
+    ocr_confidence REAL,
+    ocr_engine TEXT,
     PRIMARY KEY (doc_id, pdf_page)
 );
 
@@ -114,6 +120,17 @@ CREATE TABLE IF NOT EXISTS audit_log (
 CREATE INDEX IF NOT EXISTS audit_at_idx ON audit_log(at DESC);
 """
 
+MIGRATIONS: dict[int, list[str]] = {
+    2: [
+        "ALTER TABLE documents ADD COLUMN ocr_pages INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE documents ADD COLUMN ocr_confidence REAL",
+        "ALTER TABLE documents ADD COLUMN ocr_low_confidence INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE pages ADD COLUMN ocr INTEGER NOT NULL DEFAULT 0",
+        "ALTER TABLE pages ADD COLUMN ocr_confidence REAL",
+        "ALTER TABLE pages ADD COLUMN ocr_engine TEXT",
+    ],
+}
+
 
 def utcnow() -> str:
     return datetime.now(UTC).isoformat(timespec="milliseconds")
@@ -136,10 +153,19 @@ def connect(db_path: Path) -> sqlite3.Connection:
 
 def init_db(conn: sqlite3.Connection) -> None:
     version = int(conn.execute("PRAGMA user_version").fetchone()[0])
-    if version >= SCHEMA_VERSION:
-        return
-    conn.executescript(SCHEMA)
-    conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+    if version > SCHEMA_VERSION:
+        raise RuntimeError(
+            f"Database schema version {version} is newer than this build "
+            f"({SCHEMA_VERSION}). Upgrade Paperproof."
+        )
+    if version == 0:
+        conn.executescript(SCHEMA)
+        conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+    elif version < SCHEMA_VERSION:
+        for target in range(version + 1, SCHEMA_VERSION + 1):
+            for statement in MIGRATIONS.get(target, []):
+                conn.execute(statement)
+            conn.execute(f"PRAGMA user_version = {target}")
     conn.commit()
 
 

@@ -59,7 +59,21 @@
 </div>
 {% endif %}
 
-<div class="desk" data-desk data-doc="{{ doc.id }}" data-page-count="{{ doc.page_count }}" data-page="{{ viewer.page }}">
+{% if doc.ocr_pages and not doc.needs_ocr %}
+<div class="notice-band notice-ocr">
+  <strong>Text recovered with OCR.</strong>
+  {% for item in ocr_details %}Page {{ item.page }} at {{ item.confidence|round|int }}%{% if not loop.last %}, {% endif %}{% endfor %}.
+  {% if doc.ocr_low_confidence %}Some pages are low confidence. Check each quote against the page image before approving.{% endif %}
+</div>
+{% endif %}
+
+{% if doc.error %}
+<div class="notice-band notice-warn">
+  <strong>Ingestion warning.</strong> {{ doc.error }}
+</div>
+{% endif %}
+
+<div class="desk" data-desk data-doc="{{ doc.id }}" data-page-count="{{ doc.page_count }}" data-page="{{ viewer.page }}" data-page-ocr="{{ viewer.ocr_map_json }}">
   <section class="records" aria-label="Extracted terms">
     <div class="records-head">
       <h2>Extracted terms</h2>
@@ -151,6 +165,11 @@
       <div class="caption-head">
         <span class="cite-tab" id="caption-tab">p. {{ viewer.printed_label or viewer.page }}</span>
         <span class="mono faint" id="caption-note">{{ viewer.page_note }}</span>
+        {% if viewer.ocr %}
+        <span class="ocr-pill" id="ocr-pill">OCR {{ viewer.ocr_confidence|round|int }}%</span>
+        {% else %}
+        <span class="ocr-pill" id="ocr-pill" hidden></span>
+        {% endif %}
       </div>
       <p class="viewer-quote" id="caption-quote" aria-live="polite">
         {% if viewer.quote %}“{{ viewer.quote }}”{% else %}Select a cited term to see its clause.{% endif %}

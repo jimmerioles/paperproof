@@ -16,8 +16,10 @@ jobs:
           python-version: "3.13"
           enable-cache: true
       - run: uv sync --frozen
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng
       - run: uv run ruff check .
       - run: uv run ruff format --check .
       - run: uv run pyright
       - run: uv run pytest
       - run: uv run paperproof eval
+      - run: docker build -t paperproof:ci .

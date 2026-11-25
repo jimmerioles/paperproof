@@ -10,7 +10,7 @@ The product bet is simple: accuracy claims are cheap, checkable evidence is expe
 
 - General chat over documents.
 - Legal advice or clause interpretation.
-- OCR in this slice.
+- Cloud OCR or handwriting recognition.
 - Multi-tenant SaaS operations.
 - Real-time collaboration.
 
@@ -99,8 +99,8 @@ SQLite, WAL mode, foreign keys on.
 
 | Table | Purpose |
 | --- | --- |
-| `documents` | One row per unique PDF, keyed by SHA-256. Status is `indexed`, `needs_ocr`, or `failed`. |
-| `pages` | Page text, dimensions, printed label, and compact word boxes as JSON. |
+| `documents` | One row per unique PDF, keyed by SHA-256. Status is `indexed`, `needs_ocr`, or `failed`. OCR page count and confidence are stored alongside. |
+| `pages` | Page text, dimensions, printed label, compact word boxes as JSON, and OCR flag, engine, and confidence. |
 | `chunks` | Section-aware passages with heading, ordinal, and page range. |
 | `chunks_fts` | FTS5 external-content index over chunk text and headings, porter stemming. |
 | `embeddings` | Float32 vectors as blobs, one per chunk. |
@@ -131,7 +131,9 @@ Chunking:
 - join hyphenated line breaks,
 - keep page ranges for retrieval hints.
 
-Scanned documents are detected when the average alphanumeric characters per page falls below 40. They are stored for viewing but not chunked. Extraction returns an explicit OCR-required abstention for every field.
+Scanned documents are detected when the average alphanumeric characters per page falls below 40. Pages below the per-page text threshold are rendered at 300 DPI and passed to Tesseract. The OCR output replaces the empty page text and provides word boxes for highlights, plus a page confidence score. A document whose OCR still leaves too little text is stored for viewing but not chunked, and extraction returns an explicit OCR-required abstention for every field.
+
+OCR lines are marked as OCR in the chunker, so font-size heading heuristics are disabled for them. Numbering and all-caps headings still work. Low-confidence pages are surfaced in the document banner and the source view.
 
 ## Retrieval
 
@@ -161,7 +163,7 @@ The model returns `{value, quote, confidence, abstained, reason}`. Values are co
 
 `extract_document` orchestrates:
 
-1. If the document needs OCR, abstain for every field.
+1. If the document still needs OCR after the OCR pass, abstain for every field.
 2. Retrieve field-specific passages, scoped to the document.
 3. Extract a candidate.
 4. Verify the quote.
@@ -206,6 +208,7 @@ Assumptions: local or trusted network, single team, no hostile multi-tenant user
 - Jinja autoescaping is on. The only `safe` filter is for search snippets that are escaped before `<mark>` insertion.
 - CSP forbids inline scripts and external origins. Fonts are vendored.
 - The server binds to `127.0.0.1` by default. There is no auth. Do not expose it.
+- OCR runs locally with Tesseract. Scanned pages are not sent to an external service.
 - LLM mode sends only retrieved passages to the configured endpoint. If documents are sensitive, use a local model or a provider with the right data terms.
 - Retrieved text is untrusted input for the LLM. The prompt says to ignore instructions inside passages, but prompt injection is still possible. The verifier limits the damage to incorrect extraction, and a human must approve before a record is final. The LLM has no tools and no write access.
 

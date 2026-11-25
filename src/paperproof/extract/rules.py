@@ -121,6 +121,8 @@ def _parse_renewal(text: str) -> RuleMatch | None:
         lowered = sentence.lower()
         if "renew" not in lowered and "extend" not in lowered:
             continue
+        if len(sentence.split()) < 5:
+            continue
         if "monthly rent" in lowered and "renewal term" in lowered:
             continue
         if "no option" in lowered or re.search(r"shall have no (option|right)", lowered):
@@ -165,7 +167,8 @@ class RuleExtractor:
         if parser is None:
             return Candidate(abstained=True, reason="No rule parser for this field.")
         for hit in hits:
-            match = parser(hit.text)
+            text = f"{hit.heading} {hit.text}" if hit.heading else hit.text
+            match = parser(text)
             if match:
                 return Candidate(
                     value=match.value,

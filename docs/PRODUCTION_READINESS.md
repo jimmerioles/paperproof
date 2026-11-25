@@ -18,6 +18,8 @@ Current verdict: **demo-ready, not pilot-ready**.
 | A quote is never shown unless it exists in the PDF text layer | Yes | Yes | Done | `extract/verify.py`, `tests/test_verify.py` |
 | Exact and fuzzy matches are distinguished in the UI | Yes | Yes | Done | `extract/service.py`, `document.html` |
 | Printed page and PDF page are both tracked | Yes | Yes | Done | `ingest/pdf.py`, `presenters.py` |
+| Scanned pages are OCR'd locally | Yes | Yes | Done | `ingest/ocr.py`, `tests/test_ocr.py` |
+| OCR confidence is visible per page | Yes | Yes | Done | Document banner, source view, `ocr-pill` |
 | Synthetic golden set passes in CI | Yes | Yes | Done | `evals/cases.jsonl`, CI |
 | 200+ labeled fields from real leases | Yes | Yes | Missing | No real corpus yet |
 | Per-field accuracy, precision, recall, and false confidence | Yes | Yes | Missing | Aggregate only today |
@@ -88,7 +90,7 @@ Current verdict: **demo-ready, not pilot-ready**.
 | --- | --- | --- | --- | --- |
 | Review a field against its source page | Yes | Yes | Done | Review desk |
 | Approve, reject, and audit decisions | Yes | Yes | Done | Review flow, `audit_log` |
-| OCR state visible to the reviewer | Yes | Yes | Missing | OCR not implemented |
+| OCR state visible to the reviewer | Yes | Yes | Done | OCR banner and per-page badge |
 | Bulk approve and reject | No | Yes | Missing | One field at a time |
 | Reviewer assignment and queues | No | Yes | Missing | None |
 | Comments and correction reasons | Yes | Yes | Missing | Reject has no structured reason |
@@ -133,8 +135,9 @@ Current verdict: **demo-ready, not pilot-ready**.
 ## Known exceptions
 
 - The Docker image is not built in CI yet. The local environment cannot access the Docker socket, so the image has not been smoke tested. This is tracked in the M1 deployment issue.
-- The 29 case eval is synthetic. It proves the loop, not real-world accuracy.
+- The 35 case eval is synthetic. It proves the loop, not real-world accuracy.
 - The hash embedder is lexical. It is deterministic and hermetic, not semantic.
+- OCR is local Tesseract only. Cloud fallback and handwriting are not implemented.
 
 ## How to update this document
 

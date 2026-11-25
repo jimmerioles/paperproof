@@ -21,6 +21,7 @@ dependencies = [
   "typer>=0.15",
   "rich>=13.9",
   "reportlab>=4.2",
+  "pytesseract>=0.3.13",
 ]
 
 [dependency-groups]

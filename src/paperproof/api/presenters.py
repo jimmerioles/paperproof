@@ -16,7 +16,8 @@ MONEY_FIELDS = {"monthly_rent", "security_deposit", "late_fee"}
 
 def _page_map(conn: sqlite3.Connection, doc_id: str) -> dict[int, dict[str, Any]]:
     rows = conn.execute(
-        "SELECT pdf_page, width, height, printed_label FROM pages WHERE doc_id = ?",
+        "SELECT pdf_page, width, height, printed_label, ocr, ocr_confidence "
+        "FROM pages WHERE doc_id = ?",
         (doc_id,),
     ).fetchall()
     return {
@@ -24,6 +25,8 @@ def _page_map(conn: sqlite3.Connection, doc_id: str) -> dict[int, dict[str, Any]
             "width": float(row["width"]),
             "height": float(row["height"]),
             "printed_label": row["printed_label"],
+            "ocr": bool(row["ocr"]),
+            "ocr_confidence": row["ocr_confidence"],
         }
         for row in rows
     }
@@ -185,8 +188,26 @@ def document_view(
     page_count = int(document["page_count"])
     viewer_page = selected["page"] if selected and selected["page"] else 1
     viewer_page = max(1, min(viewer_page, page_count))
-    viewer_meta = pages.get(viewer_page, {"width": 612.0, "height": 792.0, "printed_label": None})
+    viewer_meta = pages.get(
+        viewer_page,
+        {
+            "width": 612.0,
+            "height": 792.0,
+            "printed_label": None,
+            "ocr": False,
+            "ocr_confidence": None,
+        },
+    )
     printed = viewer_meta["printed_label"]
+    ocr_map = {
+        str(page_number): (meta["ocr_confidence"] if meta["ocr"] else None)
+        for page_number, meta in pages.items()
+    }
+    ocr_details = [
+        {"page": page_number, "confidence": meta["ocr_confidence"]}
+        for page_number, meta in sorted(pages.items())
+        if meta["ocr"]
+    ]
     viewer = {
         "page": viewer_page,
         "page_count": page_count,
@@ -205,6 +226,9 @@ def document_view(
         "next_page": min(page_count, viewer_page + 1),
         "page_width": round(float(viewer_meta["width"])),
         "page_height": round(float(viewer_meta["height"])),
+        "ocr": bool(viewer_meta.get("ocr")),
+        "ocr_confidence": viewer_meta.get("ocr_confidence"),
+        "ocr_map_json": json.dumps(ocr_map),
     }
 
     return {
@@ -217,11 +241,16 @@ def document_view(
             "page_count": page_count,
             "status": document["status"],
             "needs_ocr": bool(document["needs_ocr"]),
+            "ocr_pages": int(document["ocr_pages"] or 0),
+            "ocr_confidence": document["ocr_confidence"],
+            "ocr_low_confidence": bool(document["ocr_low_confidence"]),
+            "error": document["error"],
             "created_at": document["created_at"],
         },
         "records": records,
         "selected": selected,
         "viewer": viewer,
+        "ocr_details": ocr_details,
         "totals": totals,
         "has_extractions": bool(records),
     }

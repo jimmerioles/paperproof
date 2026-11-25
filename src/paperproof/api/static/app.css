@@ -875,6 +875,16 @@ h3 {
   color: var(--ink);
 }
 
+.notice-ocr {
+  border-left-color: var(--gold);
+  background: var(--gold-wash);
+  color: #6b4e12;
+}
+
+.notice-ocr strong {
+  color: var(--ink);
+}
+
 /* ---------- Review desk ---------- */
 
 .desk {
@@ -1024,6 +1034,33 @@ h3 {
   border-color: var(--red);
   background: var(--red);
   color: #fff;
+}
+
+.ocr-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 5px;
+  border: 1px solid rgba(138, 100, 24, 0.35);
+  border-radius: 2px;
+  background: var(--gold-wash);
+  color: var(--gold);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.viewer-caption .ocr-pill {
+  border-color: #4c585e;
+  background: rgba(241, 198, 92, 0.08);
+  color: #f0c75e;
+}
+
+.ocr-note {
+  margin: 12px 0 18px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .empty-panel {

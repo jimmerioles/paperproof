@@ -12,6 +12,7 @@ from pathlib import Path
 from paperproof.config import Settings
 from paperproof.db import audit, new_id, one, utcnow
 from paperproof.ingest.chunk import chunk_pages
+from paperproof.ingest.ocr import get_ocr_engine
 from paperproof.ingest.pdf import parse_pdf
 from paperproof.search.embed import get_embedder
 from paperproof.search.index import index_chunks
@@ -27,6 +28,9 @@ class IngestResult:
     needs_ocr: bool
     title: str
     filename: str
+    ocr_pages: int = 0
+    ocr_confidence: float | None = None
+    ocr_low_confidence: bool = False
 
 
 def sha256_file(path: Path) -> str:
@@ -52,7 +56,8 @@ def ingest_file(
     checksum = sha256_file(source)
     existing = one(
         conn,
-        "SELECT id, status, page_count, needs_ocr, title, filename FROM documents WHERE sha256 = ?",
+        "SELECT id, status, page_count, needs_ocr, ocr_pages, ocr_confidence, "
+        "ocr_low_confidence, title, filename FROM documents WHERE sha256 = ?",
         (checksum,),
     )
     if existing:
@@ -65,6 +70,9 @@ def ingest_file(
             needs_ocr=bool(existing["needs_ocr"]),
             title=str(existing["title"]),
             filename=str(existing["filename"]),
+            ocr_pages=int(existing["ocr_pages"]),
+            ocr_confidence=existing["ocr_confidence"],
+            ocr_low_confidence=bool(existing["ocr_low_confidence"]),
         )
 
     doc_id = new_id("doc")
@@ -74,14 +82,21 @@ def ingest_file(
     shutil.copy2(source, destination)
 
     try:
-        parsed = parse_pdf(destination)
+        parsed = parse_pdf(
+            destination,
+            ocr_engine=get_ocr_engine(settings),
+            ocr_min_chars=settings.ocr_min_chars,
+            ocr_low_confidence=settings.ocr_low_confidence,
+        )
         title = parsed.title or Path(filename).stem
         status = "needs_ocr" if parsed.needs_ocr else "indexed"
+        error = "; ".join(parsed.ocr_errors) if parsed.ocr_errors else None
 
         conn.execute(
             "INSERT INTO documents "
             "(id, sha256, filename, stored_path, title, page_count, status, needs_ocr, "
-            " meta_json, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            " ocr_pages, ocr_confidence, ocr_low_confidence, error, meta_json, created_at) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
             (
                 doc_id,
                 checksum,
@@ -91,6 +106,10 @@ def ingest_file(
                 parsed.page_count,
                 status,
                 int(parsed.needs_ocr),
+                parsed.ocr_pages,
+                parsed.ocr_confidence,
+                int(parsed.ocr_low_confidence),
+                error,
                 "{}",
                 utcnow(),
             ),
@@ -99,8 +118,9 @@ def ingest_file(
         for page in parsed.pages:
             conn.execute(
                 "INSERT INTO pages "
-                "(doc_id, pdf_page, printed_label, width, height, text, words_json) "
-                "VALUES (?, ?, ?, ?, ?, ?, ?)",
+                "(doc_id, pdf_page, printed_label, width, height, text, words_json, "
+                " ocr, ocr_confidence, ocr_engine) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     doc_id,
                     page.pdf_page,
@@ -112,6 +132,9 @@ def ingest_file(
                         [word.as_dict() for word in page.words],
                         separators=(",", ":"),
                     ),
+                    int(page.ocr),
+                    page.ocr_confidence,
+                    page.ocr_engine,
                 ),
             )
 
@@ -156,6 +179,10 @@ def ingest_file(
                 "page_count": parsed.page_count,
                 "chunks": chunk_count,
                 "needs_ocr": parsed.needs_ocr,
+                "ocr_pages": parsed.ocr_pages,
+                "ocr_confidence": parsed.ocr_confidence,
+                "ocr_low_confidence": parsed.ocr_low_confidence,
+                "ocr_errors": parsed.ocr_errors,
             },
         )
         return IngestResult(
@@ -167,6 +194,9 @@ def ingest_file(
             needs_ocr=parsed.needs_ocr,
             title=title,
             filename=filename,
+            ocr_pages=parsed.ocr_pages,
+            ocr_confidence=parsed.ocr_confidence,
+            ocr_low_confidence=parsed.ocr_low_confidence,
         )
     except Exception:
         destination.unlink(missing_ok=True)

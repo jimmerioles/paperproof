@@ -41,8 +41,10 @@ def _is_heading(line: Line, body_size: float) -> bool:
     text = line.text.strip()
     if not text or len(text) > HEADING_MAX_CHARS:
         return False
-    if body_size and line.size >= body_size + 1.6:
+    if not line.ocr and body_size and line.size >= body_size + 1.6:
         return True
+    if len(text.split()) > 10:
+        return False
     if NUMBERED_HEADING.match(text):
         return True
     letters = [char for char in text if char.isalpha()]

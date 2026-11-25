@@ -3,9 +3,16 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
+import pytest
 from fastapi.testclient import TestClient
 
 from paperproof.extract.service import extract_document
+from paperproof.ingest.ocr import tesseract_available
+from paperproof.ingest.pipeline import ingest_file
+
+requires_tesseract = pytest.mark.skipif(
+    not tesseract_available(), reason="tesseract-ocr is not installed"
+)
 
 
 def test_dashboard_renders(client: TestClient) -> None:
@@ -114,6 +121,25 @@ def test_healthz(client: TestClient) -> None:
     response = client.get("/healthz")
     assert response.status_code == 200
     assert response.json()["status"] == "ok"
+
+
+@requires_tesseract
+def test_scanned_document_shows_ocr(
+    client: TestClient,
+    conn: sqlite3.Connection,
+    settings,
+    sample_paths: list[Path],
+) -> None:
+    result = ingest_file(conn, settings, sample_paths[4])
+    conn.commit()
+    extract_document(conn, settings, result.doc_id)
+    conn.commit()
+    response = client.get(f"/documents/{result.doc_id}")
+    assert response.status_code == 200
+    assert "Text recovered with OCR" in response.text
+    assert "12 months" in response.text
+    assert "Prohibited" in response.text
+    assert "OCR" in response.text
 
 
 def test_html_404(client: TestClient) -> None:

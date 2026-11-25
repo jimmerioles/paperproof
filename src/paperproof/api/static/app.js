@@ -79,6 +79,7 @@
   const quoteElement = document.getElementById("caption-quote");
   const tabElement = document.getElementById("caption-tab");
   const noteElement = document.getElementById("caption-note");
+  const ocrPill = document.getElementById("ocr-pill");
   const prevButton = document.querySelector("[data-page-prev]");
   const nextButton = document.querySelector("[data-page-next]");
 
@@ -88,6 +89,25 @@
 
   const records = Array.from(document.querySelectorAll("[data-record]"));
   const emptyCaption = "Select a cited term to see its clause.";
+
+  let ocrByPage = {};
+  try {
+    ocrByPage = JSON.parse(desk.dataset.pageOcr || "{}");
+  } catch {
+    ocrByPage = {};
+  }
+
+  const updateOcrPill = (page) => {
+    if (!ocrPill) return;
+    const confidence = ocrByPage[String(page)];
+    if (confidence === null || confidence === undefined) {
+      ocrPill.hidden = true;
+      ocrPill.textContent = "";
+      return;
+    }
+    ocrPill.hidden = false;
+    ocrPill.textContent = `OCR ${Math.round(Number(confidence))}%`;
+  };
 
   const renderBoxes = (boxes) => {
     highlights.replaceChildren();
@@ -111,6 +131,7 @@
     noteElement.textContent = `PDF page ${target}`;
     quoteElement.textContent = emptyCaption;
     renderBoxes([]);
+    updateOcrPill(target);
     records.forEach((record) => record.classList.remove("is-selected"));
   };
 
@@ -133,6 +154,7 @@
       noteElement.textContent = record.dataset.pageNote || `PDF page ${page}`;
       quoteElement.textContent = quote ? `“${quote}”` : emptyCaption;
       renderBoxes(Array.isArray(boxes) ? boxes : []);
+      updateOcrPill(page);
       records.forEach((other) => other.classList.toggle("is-selected", other === record));
     });
   });

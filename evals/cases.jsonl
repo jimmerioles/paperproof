@@ -26,4 +26,10 @@
 {"doc": "lease_04_marlowe_terrace.pdf", "field": "subletting", "abstain": true}
 {"doc": "lease_04_marlowe_terrace.pdf", "field": "renewal_option", "abstain": true}
 {"doc": "lease_04_marlowe_terrace.pdf", "field": "late_fee", "value": 125}
-{"doc": "lease_05_scanned_studio.pdf", "field": "term_months", "abstain": true}
+{"doc": "lease_05_scanned_studio.pdf", "field": "term_months", "value": 12}
+{"doc": "lease_05_scanned_studio.pdf", "field": "monthly_rent", "value": 1950}
+{"doc": "lease_05_scanned_studio.pdf", "field": "security_deposit", "value": 2900}
+{"doc": "lease_05_scanned_studio.pdf", "field": "notice_days", "value": 30}
+{"doc": "lease_05_scanned_studio.pdf", "field": "subletting", "value": "prohibited"}
+{"doc": "lease_05_scanned_studio.pdf", "field": "renewal_option", "contains": "No renewal option"}
+{"doc": "lease_05_scanned_studio.pdf", "field": "late_fee", "value": 90}

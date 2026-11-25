@@ -8,11 +8,11 @@ This repository is built to be changed safely by coding agents and humans. Read 
 uv sync                     # install
 uv run paperproof demo      # seed ./data with the sample corpus
 uv run paperproof serve     # http://127.0.0.1:8000
-uv run pytest               # 39 tests
+uv run pytest               # 46 tests
 uv run ruff check .         # lint
 uv run ruff format .        # format
 uv run pyright              # type check
-uv run paperproof eval      # 29 case golden set
+uv run paperproof eval      # 35 case golden set
 make check                  # everything above except serve
 ```
 
@@ -21,7 +21,7 @@ make check                  # everything above except serve
 ```text
 api/         FastAPI routes, Jinja templates, presenters, static assets
 extract/     FieldSpec + Template, RuleExtractor, LLMExtractor, verify_quote, service
-ingest/      parse_pdf -> Pages/Words, chunk_pages -> ChunkDraft, ingest_file
+ingest/      parse_pdf -> Pages/Words, OCR for scans, chunk_pages, ingest_file
 search/      HashingEmbedder, index_chunks, hybrid search with RRF
 db.py        schema, connection helpers, audit()
 evaluation.py golden-set runner
@@ -43,6 +43,7 @@ The web app is server-rendered. No Node build step. CSS and JS live in `api/stat
 9. **No em dashes in prose.** Use commas, colons, or separate sentences. This applies to docs, comments, UI copy, and commit messages.
 10. **Keep the trust boundary small.** New extraction paths must return `Candidate` and go through `extract_document`. Do not add a second path to the database.
 11. **Keep the license story accurate.** The project is source-available under FSL-1.1-ALv2, not OSI open source. Do not relabel it as MIT or "open source" in docs, package metadata, or the UI.
+12. **OCR text is untrusted.** Page text recovered by OCR can contain mistakes. Verify quotes against that text, expose the confidence, and never hide the OCR state from the reviewer.
 
 ## Where to change things
 
@@ -88,4 +89,4 @@ The web app is server-rendered. No Node build step. CSS and JS live in `api/stat
 
 ## Known gaps
 
-OCR, real embeddings, auth, amendment/effective-date logic, and multi-tenant isolation are deliberately out of scope for this slice. See README limits and `docs/ARCHITECTURE.md` for the scale path.
+Real embeddings, auth, amendment/effective-date logic, and multi-tenant isolation are deliberately out of scope for this slice. See README limits and `docs/ARCHITECTURE.md` for the scale path.

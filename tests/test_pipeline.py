@@ -3,10 +3,17 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
+import pytest
+
 from paperproof.config import Settings
 from paperproof.extract.service import extract_document, review_extraction
+from paperproof.ingest.ocr import tesseract_available
 from paperproof.ingest.pipeline import ingest_file
 from paperproof.search.retrieve import search
+
+requires_tesseract = pytest.mark.skipif(
+    not tesseract_available(), reason="tesseract-ocr is not installed"
+)
 
 
 def test_ingest_is_idempotent(
@@ -66,3 +73,18 @@ def test_review_writes_audit_event(conn: sqlite3.Connection, settings: Settings,
     ).fetchone()
     assert event is not None
     assert event["entity"] == target.id
+
+
+@requires_tesseract
+def test_scanned_lease_is_extracted(
+    conn: sqlite3.Connection, settings: Settings, sample_paths: list[Path]
+) -> None:
+    result = ingest_file(conn, settings, sample_paths[4])
+    assert result.status == "indexed"
+    assert result.ocr_pages == 2
+    results = extract_document(conn, settings, result.doc_id)
+    term = next(item for item in results if item.field == "term_months")
+    assert term.value == 12
+    assert term.verifier == "exact"
+    deposit = next(item for item in results if item.field == "security_deposit")
+    assert deposit.value == 2900

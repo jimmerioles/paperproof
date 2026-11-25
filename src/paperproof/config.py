@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -26,6 +27,12 @@ class Settings(BaseSettings):
     chunk_chars: int = 900
     chunk_overlap_chars: int = 160
     embedder: str = "hash"
+
+    # OCR
+    ocr: Literal["auto", "tesseract", "off"] = "auto"
+    ocr_dpi: int = 300
+    ocr_min_chars: int = 40
+    ocr_low_confidence: float = 60.0
 
     # Extraction
     extractor: str = "auto"  # auto | rules | llm

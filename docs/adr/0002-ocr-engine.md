@@ -1,6 +1,6 @@
 # 0002: Choose an OCR engine
 
-Status: Proposed
+Status: Accepted
 Date: 2026-11-25
 
 ## Context
@@ -32,8 +32,18 @@ Start with **C**, with local Tesseract as the default and cloud escalation disab
 
 ## Decision
 
-TBD. Write the chosen option here before starting the OCR implementation.
+Use **A**, local Tesseract, for the pilot slice.
+
+- Render pages with pypdfium2 at 300 DPI and call Tesseract 5 through pytesseract.
+- Persist per-page OCR text, word boxes, engine name, and confidence.
+- Default the low-confidence threshold to 60 and show it in the document and source views.
+- Do not send documents to a cloud OCR service.
+- Keep the `OcrEngine` protocol so a cloud fallback can be added later, with tenant opt-in.
 
 ## Consequences
 
-TBD after the decision. Include the deployment packages, cost model, data flow, and test strategy.
+- Scans work offline and stay on the deployment.
+- No per-page OCR cost and no data processing agreement for OCR.
+- Tesseract becomes a system dependency for scanned documents. `tesseract-ocr` is installed in the Docker image and CI.
+- Accuracy is lower on poor scans, unusual layouts, and handwriting. The confidence score and the review flow make that visible.
+- Chunking disables font-size heading heuristics for OCR lines because OCR has no reliable font metadata. Numbered and all-caps headings still work.

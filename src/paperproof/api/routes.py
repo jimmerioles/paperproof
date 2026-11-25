@@ -325,6 +325,8 @@ def source_page(
         "next_page": min(page_count, target_page + 1),
         "page_width": round(page_meta.width),
         "page_height": round(page_meta.height),
+        "page_ocr": page_meta.ocr,
+        "page_ocr_confidence": page_meta.ocr_confidence,
         "back_url": f"/documents/{doc_id}",
     }
     return templates.TemplateResponse(request=request, name="source.html", context=context)

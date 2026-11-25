@@ -63,7 +63,9 @@ def samples(
             result.filename,
             str(result.page_count),
             str(result.chunks),
-            "needs OCR" if result.needs_ocr else "indexed",
+            "needs OCR"
+            if result.needs_ocr
+            else ("OCR + indexed" if result.ocr_pages else "indexed"),
             result.doc_id,
         )
     console.print(table)
@@ -104,7 +106,9 @@ def ingest(paths: list[Path] = typer.Argument(..., help="PDF files or directorie
                 str(result.page_count),
                 str(result.chunks),
                 result.status,
-                "duplicate" if result.duplicate else "",
+                "duplicate"
+                if result.duplicate
+                else (f"OCR {result.ocr_pages}p" if result.ocr_pages else ""),
             )
     console.print(table)
 
@@ -218,7 +222,9 @@ def demo(force: bool = typer.Option(False, "--force")) -> None:
     for result in results:
         table.add_row(
             result.filename,
-            "needs OCR" if result.needs_ocr else "indexed + extracted",
+            "needs OCR"
+            if result.needs_ocr
+            else ("OCR + extracted" if result.ocr_pages else "indexed + extracted"),
             f"http://127.0.0.1:{settings.port}/documents/{result.doc_id}",
         )
     console.print(table)

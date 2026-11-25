@@ -6,9 +6,13 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from statistics import median
+from typing import TYPE_CHECKING
 
 import pdfplumber
 import pypdfium2 as pdfium
+
+if TYPE_CHECKING:
+    from paperproof.ingest.ocr import OcrEngine
 
 PAGE_LABEL_PATTERNS = (
     re.compile(r"^page\s+(\d{1,4})(?:\s+of\s+\d{1,4})?$", re.IGNORECASE),
@@ -33,6 +37,7 @@ class Line:
     text: str
     size: float
     pdf_page: int
+    ocr: bool = False
 
 
 @dataclass
@@ -44,6 +49,9 @@ class Page:
     words: list[Word]
     printed_label: str | None
     lines: list[Line] = field(default_factory=list, repr=False)
+    ocr: bool = False
+    ocr_confidence: float | None = None
+    ocr_engine: str | None = None
 
 
 @dataclass
@@ -51,6 +59,10 @@ class ParsedDocument:
     title: str
     pages: list[Page]
     needs_ocr: bool
+    ocr_pages: int = 0
+    ocr_confidence: float | None = None
+    ocr_low_confidence: bool = False
+    ocr_errors: list[str] = field(default_factory=list)
 
     @property
     def page_count(self) -> int:
@@ -83,10 +95,16 @@ def _detect_printed_label(lines: list[str]) -> str | None:
     return None
 
 
-def parse_pdf(path: Path) -> ParsedDocument:
+def parse_pdf(
+    path: Path,
+    ocr_engine: OcrEngine | None = None,
+    ocr_min_chars: int = 40,
+    ocr_low_confidence: float = 60.0,
+) -> ParsedDocument:
     """Parse a PDF into pages with text, line sizes, and word boxes.
 
-    Raises pdfplumber/pdfminer errors on malformed files.
+    Pages with too little text are passed to ``ocr_engine`` when one is
+    supplied. OCR failures are recorded and leave the page viewable.
     """
     pages: list[Page] = []
     with pdfplumber.open(path) as pdf:
@@ -135,9 +153,46 @@ def parse_pdf(path: Path) -> ParsedDocument:
                 )
             )
 
+    ocr_errors: list[str] = []
+    if ocr_engine is not None:
+        for page in pages:
+            page_alnum = sum(1 for char in page.text if char.isalnum())
+            if page_alnum >= ocr_min_chars:
+                continue
+            try:
+                result = ocr_engine.ocr_page(path, page.pdf_page, page.width, page.height)
+            except Exception as exc:
+                ocr_errors.append(f"Page {page.pdf_page}: {exc}")
+                continue
+            if not result.text.strip():
+                continue
+            page.text = result.text
+            page.words = result.words
+            page.lines = result.lines
+            page.ocr = True
+            page.ocr_confidence = result.confidence
+            page.ocr_engine = result.engine
+            page.printed_label = _detect_printed_label(page.text.splitlines())
+
     alnum = sum(1 for page in pages for char in page.text if char.isalnum())
     needs_ocr = bool(pages) and (alnum / len(pages)) < 40
-    return ParsedDocument(title=title, pages=pages, needs_ocr=needs_ocr)
+    ocr_pages = [page for page in pages if page.ocr]
+    confidences = [
+        float(page.ocr_confidence) for page in ocr_pages if page.ocr_confidence is not None
+    ]
+    ocr_confidence = round(sum(confidences) / len(confidences), 2) if confidences else None
+    has_low_confidence = any(
+        (page.ocr_confidence or 0.0) < ocr_low_confidence for page in ocr_pages
+    )
+    return ParsedDocument(
+        title=title,
+        pages=pages,
+        needs_ocr=needs_ocr,
+        ocr_pages=len(ocr_pages),
+        ocr_confidence=ocr_confidence,
+        ocr_low_confidence=has_low_confidence,
+        ocr_errors=ocr_errors,
+    )
 
 
 def body_font_size(pages: list[Page]) -> float:

@@ -28,19 +28,28 @@ Most document AI is a chat box with a confidence problem. It sounds right, cites
 - **Citation or it did not happen.** Every value is persisted with a quote, a page, and boxes. The quote is matched against the page text before it reaches the UI.
 - **Abstention is a feature.** A missing clause is reported as missing. A scanned page is flagged, not hallucinated.
 - **The review is the workflow.** Approve or reject each field. Every decision lands in an audit log.
-- **Evals before prompts.** A 29 case golden set measures answer accuracy, citation rate, exactness, and false confidence.
+- **Evals before prompts.** A 35 case golden set measures answer accuracy, citation rate, exactness, and false confidence.
 
 The rule-based extractor runs with no API key, which keeps the demo and tests hermetic. Point it at any OpenAI-compatible model to use the LLM extractor.
 
 ## Quickstart
 
+Requirements: Python 3.13+, [uv](https://docs.astral.sh/uv/), and Tesseract for scanned PDFs.
+
 ```bash
+# Debian or Ubuntu
+sudo apt install tesseract-ocr
+# macOS
+brew install tesseract
+# Arch
+sudo pacman -S tesseract tesseract-data-eng
+
 uv sync
 uv run paperproof demo
 uv run paperproof serve
 ```
 
-Open http://127.0.0.1:8000. `demo` generates five synthetic leases, ingests them, extracts seven terms from each text-based document, and leaves the review queue ready. No keys, no external services.
+Open http://127.0.0.1:8000. `demo` generates five synthetic leases, OCRs the scanned one, ingests all of them, extracts seven terms from each, and leaves the review queue ready. No keys, no external services.
 
 Other entry points:
 
@@ -56,6 +65,7 @@ uv run paperproof stats
 ## What you can do
 
 - Upload PDFs with the drag and drop tray, or ingest a directory from the CLI.
+- OCR scanned leases locally with Tesseract, with per-page confidence and a visible warning when confidence is low.
 - Extract term, monthly rent, security deposit, notice period, subletting rules, renewal option, and late fee.
 - Click any cited value and see the source page with the clause highlighted.
 - Open a full page source view with the verified quote beside it.
@@ -68,6 +78,7 @@ uv run paperproof stats
 ```text
 PDF
   -> pdfplumber: pages, word boxes, font sizes, printed page labels
+  -> OCR: pages without a text layer are rendered and read by Tesseract
   -> section-aware chunking: headings, page ranges, overlap
   -> SQLite FTS5 + hashed embeddings: keyword and vector indexes
   -> hybrid retrieval: BM25 + cosine, fused with reciprocal rank, then reranked
@@ -82,6 +93,18 @@ The trust boundary is `paperproof/extract/verify.py`. Nothing bypasses it. The v
 ### Printed pages vs PDF pages
 
 Contracts often have an unnumbered cover, so printed page 3 can be PDF page 4. Paperproof detects the printed label and shows both. Citations use the printed label, and the highlight uses the PDF page coordinates.
+
+### OCR
+
+Scans are read locally with Tesseract. The document view shows which pages were OCR'd and their confidence, and the source view marks the current page. Low-confidence pages stay visible but are flagged for review.
+
+![Scanned lease recovered with OCR](docs/ocr.png)
+
+```bash
+PAPERPROOF_OCR=off              # disable OCR and keep the old abstention behavior
+PAPERPROOF_OCR_DPI=300          # render resolution for Tesseract
+PAPERPROOF_OCR_LOW_CONFIDENCE=60
+```
 
 ## LLM mode
 
@@ -107,17 +130,17 @@ Current rule baseline:
 
 | Metric | Result |
 | --- | --- |
-| Cases | 29 / 29 correct |
+| Cases | 35 / 35 correct |
 | Answer accuracy | 100% |
-| Citations independently verified | 25 / 25 |
-| Exact (not fuzzy) citations | 25 / 25 |
+| Citations independently verified | 32 / 32 |
+| Exact (not fuzzy) citations | 32 / 32 |
 | False confidence | 0 |
 
-The set includes a lease that is deliberately silent on three clauses and a scanned, image-only lease. Both must abstain correctly.
+The set includes a lease that is deliberately silent on three clauses and a scanned, image-only lease that must be recovered by OCR and cited.
 
 ## Limits, stated plainly
 
-- **No OCR.** Scanned PDFs are flagged and extraction is paused. OCR is the next infrastructure step.
+- **Local OCR only.** Tesseract handles scans on the machine. Cloud OCR for low-confidence pages is not implemented, and handwriting is out of scope.
 - **Lexical embeddings.** The default embedder hashes words, bigrams, and character n-grams. It is deterministic and dependency free. Swap it behind the `Embedder` protocol for semantic recall.
 - **Rule baseline.** Rules are fast, offline, and inspectable, but brittle on unusual drafting. The LLM path is the quality path.
 - **Single node.** SQLite, FTS5, and in-process rendering. Fine for a team and a few thousand documents. Postgres with pgvector is the scale path.
@@ -131,7 +154,7 @@ The set includes a lease that is deliberately silent on three clauses and a scan
 src/paperproof/
   api/            FastAPI app, routes, presenters, Jinja templates, CSS, JS
   extract/        templates, rules, LLM client, verifier, orchestration
-  ingest/         PDF parsing, chunking, pipeline
+  ingest/         PDF parsing, OCR, chunking, pipeline
   search/         embedder, indexing, hybrid retrieval
   config.py       typed settings with PAPERPROOF_ prefix
   db.py           SQLite schema, connections, audit helpers
@@ -155,11 +178,11 @@ make demo
 make serve
 ```
 
-The test suite covers quote normalization and fuzzy matching, chunking, rule parsers, PDF parsing, ingestion idempotency, hybrid search, extraction, review flow, API rendering, upload, the LLM client with a mock transport, and the full golden set.
+The test suite covers quote normalization and fuzzy matching, chunking, rule parsers, PDF parsing, local OCR, ingestion idempotency, hybrid search, extraction, review flow, API rendering, upload, the LLM client with a mock transport, and the full golden set.
 
 ## Production roadmap
 
-1. OCR with a queue and page-level confidence.
+1. OCR confidence review and a cloud fallback for low-confidence pages.
 2. Real embeddings (fastembed, sentence-transformers) behind the existing protocol.
 3. Postgres and pgvector, plus object storage for originals and renders.
 4. Auth, row-level permissions, and tenant isolation.

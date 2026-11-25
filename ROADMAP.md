@@ -10,12 +10,12 @@ Working today:
 
 - Verified citations with exact and fuzzy matching, printed page labels, and highlight boxes.
 - Review desk with approve and reject, source viewer, search, and audit log.
+- Local OCR for scanned leases with per-page confidence and a visible low-confidence warning.
 - Offline rule extractor and an OpenAI-compatible LLM extractor.
-- 29 case synthetic golden set, 39 tests, CI, Dockerfile, and a source-available license.
+- 35 case synthetic golden set, 46 tests, CI, Dockerfile, and a source-available license.
 
 Missing for a pilot:
 
-- OCR.
 - Authentication and CSRF protection.
 - Neural embeddings.
 - Deployment, backups, and observability.
@@ -54,13 +54,13 @@ See [docs/PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md) for the line-by
 
 **Work in the M1 milestone:**
 
-1. OCR pipeline for scanned PDFs.
-2. Neural embeddings behind the `Embedder` protocol.
-3. Real-document eval set with per-field metrics.
-4. Authentication, sessions, and CSRF.
-5. Backup and restore drill.
-6. Structured logs, request IDs, and cost tracking.
-7. Deployment bundle with TLS and healthchecks.
+1. [x] OCR pipeline for scanned PDFs.
+2. [ ] Neural embeddings behind the `Embedder` protocol.
+3. [ ] Real-document eval set with per-field metrics.
+4. [ ] Authentication, sessions, and CSRF.
+5. [ ] Backup and restore drill.
+6. [ ] Structured logs, request IDs, and cost tracking.
+7. [ ] Deployment bundle with TLS and healthchecks.
 
 ## Phase 2: Team-ready
 
@@ -129,11 +129,10 @@ These are deliberately deferred. Revisit them only when a customer or a gate dem
 
 Write an ADR in `docs/adr/` before making these choices. Each one is expensive to reverse.
 
-1. **OCR engine.** Local Tesseract first for privacy and cost, or cloud OCR for accuracy. Recommendation: local default, cloud fallback only for low-confidence pages.
-2. **Deployment target.** Single-tenant Docker Compose on a small VM, or a managed platform. Recommendation: Compose for the pilot.
-3. **LLM data policy.** Which provider can see customer documents, and under what terms. Recommendation: provider-agnostic, local model available, explicit data terms per customer.
-4. **Embedding model.** Local fastembed or an API. Recommendation: local, so tests and pilots work offline.
-5. **Retention default.** Recommendation: 90 days for abandoned uploads, configurable, with immediate delete on request.
+1. **Deployment target.** Single-tenant Docker Compose on a small VM, or a managed platform. Recommendation: Compose for the pilot.
+2. **LLM data policy.** Which provider can see customer documents, and under what terms. Recommendation: provider-agnostic, local model available, explicit data terms per customer.
+3. **Embedding model.** Local fastembed or an API. Recommendation: local, so tests and pilots work offline.
+4. **Retention default.** Recommendation: 90 days for abandoned uploads, configurable, with immediate delete on request.
 
 ## How to work on this
 

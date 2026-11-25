@@ -48,6 +48,8 @@ class PageRecord:
     width: float
     height: float
     words: list[Word]
+    ocr: bool = False
+    ocr_confidence: float | None = None
 
 
 @dataclass(frozen=True)
@@ -84,7 +86,7 @@ def match_token(value: str) -> str:
 
 def load_pages(conn: sqlite3.Connection, doc_id: str) -> list[PageRecord]:
     rows = conn.execute(
-        "SELECT pdf_page, printed_label, width, height, words_json "
+        "SELECT pdf_page, printed_label, width, height, words_json, ocr, ocr_confidence "
         "FROM pages WHERE doc_id = ? ORDER BY pdf_page",
         (doc_id,),
     ).fetchall()
@@ -108,6 +110,8 @@ def load_pages(conn: sqlite3.Connection, doc_id: str) -> list[PageRecord]:
                 width=float(row["width"]),
                 height=float(row["height"]),
                 words=words,
+                ocr=bool(row["ocr"]),
+                ocr_confidence=row["ocr_confidence"],
             )
         )
     return pages

@@ -9,6 +9,7 @@
     <p class="doc-meta">
       {% if subtitle %}<span>{{ subtitle }}</span><span class="sep">/</span>{% endif %}
       {{ page_note }} <span class="sep">/</span> Page {{ page }} of {{ page_count }}
+      {% if page_ocr %}<span class="ocr-pill">OCR {{ page_ocr_confidence|round|int }}%</span>{% endif %}
     </p>
   </div>
   <div class="source-nav">
@@ -34,6 +35,9 @@
     <p class="verified-line"><span class="dot"></span>Verified on the page</p>
     <blockquote class="source-quote">“{{ quote }}”</blockquote>
     <p class="mono faint">{{ page_note }}</p>
+    {% if page_ocr %}
+    <p class="ocr-note">OCR text, {{ page_ocr_confidence|round|int }}% confidence. Check the highlighted words against the image.</p>
+    {% endif %}
     {% elif requested_quote %}
     <span class="status status-failed"><span class="dot"></span>Not verifiable</span>
     <p class="source-note">That excerpt could not be found on this page, so no highlight is drawn. The page is still shown for reference.</p>
