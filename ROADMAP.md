@@ -12,13 +12,14 @@ Working today:
 - Review desk with approve and reject, source viewer, search, and audit log.
 - Single-admin authentication with signed sessions, CSRF, and login lockout.
 - Local OCR for scanned leases with per-page confidence and a visible low-confidence warning.
+- Backup, restore, and a restore drill that runs in CI.
 - Offline rule extractor and an OpenAI-compatible LLM extractor.
-- 35 case synthetic golden set, 46 tests, CI, Dockerfile, and a source-available license.
+- 35 case synthetic golden set, 63 tests, CI, Dockerfile, and a source-available license.
 
 Missing for a pilot:
 
 - Neural embeddings.
-- Deployment, backups, and observability.
+- Deployment and observability.
 - An eval set built from real documents.
 
 ## Production definition
@@ -58,7 +59,7 @@ See [docs/PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md) for the line-by
 2. [ ] Neural embeddings behind the `Embedder` protocol.
 3. [ ] Real-document eval set with per-field metrics.
 4. [x] Authentication, sessions, and CSRF.
-5. [ ] Backup and restore drill.
+5. [x] Backup and restore drill.
 6. [ ] Structured logs, request IDs, and cost tracking.
 7. [ ] Deployment bundle with TLS and healthchecks.
 

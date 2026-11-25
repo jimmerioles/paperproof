@@ -22,4 +22,5 @@ jobs:
       - run: uv run pyright
       - run: uv run pytest
       - run: uv run paperproof eval
+      - run: uv run paperproof restore-drill
       - run: docker build -t paperproof:ci .

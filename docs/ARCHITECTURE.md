@@ -199,6 +199,14 @@ It also counts false confidence: a wrong answer with confidence at or above 0.7.
 
 The eval runs on every CI push. Prompt, parser, and retrieval changes are not done until it passes.
 
+## Backups
+
+`paperproof backup` uses SQLite's online backup API for a consistent snapshot, then copies uploads and rendered pages and writes a manifest with schema version and row counts. `paperproof restore` refuses a non-empty target, verifies the snapshot with `PRAGMA integrity_check`, and copies the files into a fresh data directory.
+
+The session secret is deliberately not included. Users and password hashes come back with the database, but existing browser sessions are invalidated and the admin signs in again. `paperproof restore-drill` creates a throwaway library, backs it up, restores it, and compares row counts. The drill runs in CI.
+
+Backups contain customer documents and are not encrypted by the application. Encrypt the backup volume or destination, restrict access, and add off-site storage before a pilot.
+
 ## Security and privacy
 
 Assumptions: local or trusted network, single team, no hostile multi-tenant users.

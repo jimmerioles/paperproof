@@ -12,6 +12,7 @@ from rich.table import Table
 
 from paperproof.api.presenters import format_value
 from paperproof.auth import count_users, set_admin_password
+from paperproof.backup import create_backup, restore_backup, run_restore_drill
 from paperproof.config import get_settings
 from paperproof.db import audit, init_db, session
 from paperproof.extract.service import extract_document
@@ -258,6 +259,61 @@ def stats() -> None:
             title="Paperproof",
         )
     )
+
+
+@app.command()
+def backup(
+    out: Path = typer.Option(..., "--out", "-o", help="Empty directory for the backup."),
+    force: bool = typer.Option(False, "--force", help="Replace a non-empty backup directory."),
+) -> None:
+    """Back up the database, uploads, and rendered pages."""
+    settings = get_settings()
+    try:
+        info = create_backup(settings, out, force=force)
+    except (OSError, ValueError, RuntimeError) as exc:
+        console.print(f"[red]Backup failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        f"Backup written to [bold]{info.path}[/bold] "
+        f"({info.counts['documents']} documents, {info.counts['extractions']} extractions)."
+    )
+
+
+@app.command()
+def restore(
+    from_dir: Path = typer.Option(..., "--from", help="Backup directory to restore."),
+    data_dir: Path = typer.Option(..., "--data-dir", help="Empty target data directory."),
+) -> None:
+    """Restore a backup into an empty data directory."""
+    try:
+        info = restore_backup(from_dir, data_dir)
+    except (OSError, ValueError, RuntimeError) as exc:
+        console.print(f"[red]Restore failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        f"Restored [bold]{info.path}[/bold] "
+        f"({info.counts.get('documents', 0)} documents). "
+        f"Start the app with PAPERPROOF_DATA_DIR set to that path."
+    )
+
+
+@app.command("restore-drill")
+def restore_drill(
+    keep: bool = typer.Option(False, "--keep", help="Keep the drill directories."),
+) -> None:
+    """Create, back up, restore, and compare a throwaway library."""
+    result = run_restore_drill(keep=keep)
+    style = "green" if result.passed else "red"
+    console.print(
+        f"[{style}]Restore drill {'passed' if result.passed else 'failed'}.[/{style}] "
+        f"{result.documents} documents, {result.pages} pages, "
+        f"{result.extractions} extractions."
+    )
+    if keep:
+        console.print(f"Backup: {result.backup_path}")
+        console.print(f"Restored: {result.restored_path}")
+    if not result.passed:
+        raise typer.Exit(code=1)
 
 
 @app.command()

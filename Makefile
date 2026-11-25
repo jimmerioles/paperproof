@@ -1,4 +1,4 @@
-.PHONY: setup demo serve test lint format type check eval samples clean
+.PHONY: setup demo serve test lint format type check eval samples restore-drill clean
 
 setup:
 	uv sync
@@ -23,10 +23,13 @@ format:
 type:
 	uv run pyright
 
-check: lint type test eval
+check: lint type test eval restore-drill
 
 eval:
 	uv run paperproof eval
+
+restore-drill:
+	uv run paperproof restore-drill
 
 samples:
 	uv run paperproof samples --force

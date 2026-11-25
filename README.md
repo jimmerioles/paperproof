@@ -87,6 +87,18 @@ PAPERPROOF_SESSION_SECRET=<at least 32 random bytes>
 
 The pilot is single-admin. Roles, SSO, and tenant isolation are M3.
 
+## Backups
+
+```bash
+uv run paperproof backup --out /safe/paperproof-backup
+uv run paperproof restore --from /safe/paperproof-backup --data-dir /srv/paperproof-data
+uv run paperproof restore-drill
+```
+
+The backup contains a consistent SQLite snapshot, uploads, rendered pages, and a manifest. Restore refuses a non-empty target directory. The session secret is not included, so existing sessions are invalidated, but users and password hashes are restored from the database.
+
+Backups contain customer documents. Encrypt the backup volume and restrict access. Off-site storage is not implemented yet. The restore drill runs in CI.
+
 ## What you can do
 
 - Upload PDFs with the drag and drop tray, or ingest a directory from the CLI.

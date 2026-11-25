@@ -9,12 +9,13 @@ uv sync                     # install
 uv run paperproof demo      # seed ./data with the sample corpus
 uv run paperproof auth set-password  # create the local admin
 uv run paperproof serve     # http://127.0.0.1:8000
-uv run pytest               # 60 tests
+uv run pytest               # 63 tests
 uv run ruff check .         # lint
 uv run ruff format .        # format
 uv run pyright              # type check
 uv run paperproof eval      # 35 case golden set
-make check                  # everything above except serve
+uv run paperproof restore-drill  # backup and restore a throwaway library
+make check                  # lint, types, tests, eval, restore drill
 ```
 
 ## Architecture in one screen
@@ -47,6 +48,7 @@ The web app is server-rendered. No Node build step. CSS and JS live in `api/stat
 11. **Keep the license story accurate.** The project is source-available under FSL-1.1-ALv2, not OSI open source. Do not relabel it as MIT or "open source" in docs, package metadata, or the UI.
 12. **OCR text is untrusted.** Page text recovered by OCR can contain mistakes. Verify quotes against that text, expose the confidence, and never hide the OCR state from the reviewer.
 13. **Do not bypass authentication or CSRF.** Every state-changing route depends on `csrf_protect`. Do not disable auth outside `PAPERPROOF_ENV=dev`, and do not add a new POST route without the dependency.
+14. **Backups contain customer data.** Keep them encrypted and access controlled. Restore into an empty target, and never include the session secret in a backup.
 
 ## Where to change things
 

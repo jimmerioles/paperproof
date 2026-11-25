@@ -67,9 +67,9 @@ Current verdict: **demo-ready, not pilot-ready**.
 
 | Gate | Pilot | GA | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| Backup command | Yes | Yes | Missing | None |
-| Restore drill with matching counts | Yes | Yes | Missing | None |
-| Health check covers DB and disk | Yes | Yes | Partial | `/healthz` counts only |
+| Backup command | Yes | Yes | Done | `paperproof backup` |
+| Restore drill with matching counts | Yes | Yes | Done | `paperproof restore-drill`, CI |
+| Health check covers DB and disk | Yes | Yes | Partial | `/healthz` checks status only |
 | Schema migrations with versioning | Yes | Yes | Partial | `user_version` exists, only version 1 |
 | Timeouts and retries for external calls | Yes | Yes | Partial | LLM only |
 | Idempotent ingestion and extraction | Yes | Yes | Done | SHA dedupe, upsert |
@@ -82,7 +82,7 @@ Current verdict: **demo-ready, not pilot-ready**.
 | Metrics and dashboards | No | Yes | Missing | None |
 | LLM latency and cost tracking | Yes | Yes | Partial | Tokens in metadata, not surfaced |
 | Load test and performance budget | Yes | Yes | Missing | None |
-| Container build in CI | Yes | Yes | Missing | Dockerfile exists, not built in CI |
+| Container build in CI | Yes | Yes | Done | `docker build` in CI |
 
 ## Product and UX
 
@@ -134,12 +134,13 @@ Current verdict: **demo-ready, not pilot-ready**.
 
 ## Known exceptions
 
-- The Docker image is not built in CI yet. The local environment cannot access the Docker socket, so the image has not been smoke tested. This is tracked in the M1 deployment issue.
+- The Docker image builds in CI, but the local environment cannot access the Docker socket, so there is no local deployment smoke test yet. This is tracked in the M1 deployment issue.
 - The 35 case eval is synthetic. It proves the loop, not real-world accuracy.
 - The hash embedder is lexical. It is deterministic and hermetic, not semantic.
 - OCR is local Tesseract only. Cloud fallback and handwriting are not implemented.
 - Authentication is one local admin. Roles, SSO, and tenant isolation are not built.
 - Login lockout is in memory, so it resets on restart and does not span multiple workers.
+- Backups are not encrypted and have no off-site copy.
 
 ## How to update this document
 
