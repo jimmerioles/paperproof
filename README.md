@@ -10,6 +10,15 @@ The source view is the other half of the contract: the quote sits beside the pag
 
 ![Source page with a verified quote](docs/source.png)
 
+## Status
+
+Paperproof is a working local slice, not yet pilot-ready. The roadmap sequences the remaining work by risk, and the readiness checklist tracks the hard gates.
+
+- [Roadmap](ROADMAP.md)
+- [Production readiness](docs/PRODUCTION_READINESS.md)
+- [Working in short sessions](docs/WORKFLOW.md)
+- [Architecture decisions](docs/adr/)
+
 ## Why this exists
 
 Most document AI is a chat box with a confidence problem. It sounds right, cites nothing, and gives a reviewer no way to check the work. Paperproof is built around the opposite contract:

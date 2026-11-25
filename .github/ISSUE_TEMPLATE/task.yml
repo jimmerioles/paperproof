@@ -1,0 +1,56 @@
+name: Task
+description: A scoped piece of production work
+title: "[task] "
+labels: ["status:ready"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Keep this issue small enough for one focused session. If it needs more than three sessions, split it before starting.
+  - type: textarea
+    id: outcome
+    attributes:
+      label: Outcome
+      description: What changes for the user, operator, or reviewer?
+      placeholder: "A reviewer can..."
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: The smallest change that delivers the outcome.
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Acceptance criteria
+      description: Testable statements, including failure behavior.
+      placeholder: |
+        - [ ] ...
+        - [ ] ...
+    validations:
+      required: true
+  - type: textarea
+    id: test_plan
+    attributes:
+      label: Test plan
+      description: Unit, integration, eval, or manual checks.
+    validations:
+      required: true
+  - type: textarea
+    id: out_of_scope
+    attributes:
+      label: Out of scope
+      description: What this issue deliberately does not cover.
+  - type: dropdown
+    id: size
+    attributes:
+      label: Size
+      options:
+        - S (under 2 hours)
+        - M (half a day)
+        - L (one or two days)
+    validations:
+      required: true

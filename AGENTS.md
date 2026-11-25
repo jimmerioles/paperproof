@@ -76,6 +76,16 @@ The web app is server-rendered. No Node build step. CSS and JS live in `api/stat
 - UI copy is plain and active: "Approve", "Reject", "Not addressed", "Run extraction again".
 - New colors go through the CSS variables in `api/static/app.css`. The accent red is reserved for citations and active state.
 
+## Backlog and roadmap
+
+- `ROADMAP.md` is the source of truth for phase and order.
+- `docs/PRODUCTION_READINESS.md` is the gate. Do not mark a gate Done without evidence.
+- Pick one `status:ready` issue from the active milestone. Keep at most three ready at a time.
+- Split an issue if it needs more than three sessions.
+- Record expensive, hard-to-reverse choices in `docs/adr/`.
+- Update the readiness checklist in the same pull request when a gate moves.
+- `docs/WORKFLOW.md` has the session ritual and definition of done.
+
 ## Known gaps
 
 OCR, real embeddings, auth, amendment/effective-date logic, and multi-tenant isolation are deliberately out of scope for this slice. See README limits and `docs/ARCHITECTURE.md` for the scale path.
