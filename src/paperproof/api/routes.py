@@ -10,7 +10,7 @@ from urllib.parse import urlencode
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, RedirectResponse
 
-from paperproof.api.deps import get_conn
+from paperproof.api.deps import csrf_protect, get_conn
 from paperproof.api.presenters import (
     audit_view,
     boxes_percent,
@@ -80,6 +80,7 @@ def upload_documents(
     request: Request,
     files: list[UploadFile] = File(...),
     conn: sqlite3.Connection = Depends(get_conn),
+    _: None = Depends(csrf_protect),
 ):
     settings = request.app.state.settings
     max_bytes = settings.max_upload_mb * 1024 * 1024
@@ -135,7 +136,11 @@ def upload_documents(
 
 
 @router.post("/samples")
-def load_samples(request: Request, conn: sqlite3.Connection = Depends(get_conn)):
+def load_samples(
+    request: Request,
+    conn: sqlite3.Connection = Depends(get_conn),
+    _: None = Depends(csrf_protect),
+):
     settings = request.app.state.settings
     try:
         paths = generate_samples(settings)
@@ -191,6 +196,7 @@ def run_extraction(
     doc_id: str,
     template_id: str = Form("lease"),
     conn: sqlite3.Connection = Depends(get_conn),
+    _: None = Depends(csrf_protect),
 ):
     settings = request.app.state.settings
     try:
@@ -217,6 +223,7 @@ def review(
     decision: str = Form(...),
     note: str = Form(""),
     conn: sqlite3.Connection = Depends(get_conn),
+    _: None = Depends(csrf_protect),
 ):
     row = one(conn, "SELECT * FROM extractions WHERE id = ?", (extraction_id,))
     if row is None:
@@ -353,8 +360,4 @@ def audit_page(request: Request, conn: sqlite3.Connection = Depends(get_conn)):
 
 @router.get("/healthz")
 def healthz(conn: sqlite3.Connection = Depends(get_conn)):
-    return {
-        "status": "ok",
-        "documents": conn.execute("SELECT COUNT(*) FROM documents").fetchone()[0],
-        "extractions": conn.execute("SELECT COUNT(*) FROM extractions").fetchone()[0],
-    }
+    return {"status": "ok"}

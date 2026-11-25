@@ -11,8 +11,11 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from paperproof import __version__
+from paperproof.api.auth_middleware import AuthMiddleware
+from paperproof.api.auth_routes import router as auth_router
 from paperproof.api.routes import router
 from paperproof.api.templating import templates
+from paperproof.auth import LoginLimiter, SessionManager, load_session_secret
 from paperproof.config import Settings, get_settings
 from paperproof.db import init_db, session
 
@@ -38,7 +41,27 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         redoc_url=None,
     )
     app.state.settings = resolved
+    if resolved.auth_disabled and resolved.env != "dev":
+        raise ValueError("Authentication can only be disabled when PAPERPROOF_ENV=dev.")
+
+    sessions: SessionManager | None = None
+    limiter: LoginLimiter | None = None
+    if not resolved.auth_disabled:
+        sessions = SessionManager(
+            load_session_secret(resolved),
+            resolved.session_ttl_seconds,
+        )
+        limiter = LoginLimiter(
+            max_attempts=resolved.login_max_attempts,
+            window_seconds=resolved.login_window_seconds,
+            lockout_seconds=resolved.login_lockout_seconds,
+        )
+    app.state.session_manager = sessions
+    app.state.login_limiter = limiter
+
+    app.add_middleware(AuthMiddleware, settings=resolved, sessions=sessions)
     app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+    app.include_router(auth_router)
     app.include_router(router)
 
     @app.middleware("http")

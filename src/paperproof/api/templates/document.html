@@ -36,6 +36,7 @@
     <span class="mode-note">{{ "LLM / " ~ mode if llm else "Rule baseline" }}</span>
     {% if not doc.needs_ocr %}
     <form method="post" action="/documents/{{ doc.id }}/extract">
+      <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
       <input type="hidden" name="template_id" value="lease">
       <button class="btn {{ 'btn-primary' if not has_extractions else '' }}" type="submit">
         {{ "Extract lease terms" if not has_extractions else "Run extraction again" }}
@@ -92,6 +93,7 @@
       </p>
       {% if not doc.needs_ocr %}
       <form method="post" action="/documents/{{ doc.id }}/extract">
+        <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
         <input type="hidden" name="template_id" value="lease">
         <button class="btn btn-primary" type="submit">Extract lease terms</button>
       </form>
@@ -134,10 +136,12 @@
         {% if r.status == 'pending' %}
         <div class="record-actions">
           <form method="post" action="/extractions/{{ r.id }}/review">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
             <input type="hidden" name="decision" value="approved">
             <button class="btn btn-small btn-approve" type="submit">Approve</button>
           </form>
           <form method="post" action="/extractions/{{ r.id }}/review">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
             <input type="hidden" name="decision" value="rejected">
             <button class="btn btn-small btn-reject" type="submit">Reject</button>
           </form>

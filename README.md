@@ -46,10 +46,11 @@ sudo pacman -S tesseract tesseract-data-eng
 
 uv sync
 uv run paperproof demo
+uv run paperproof auth set-password
 uv run paperproof serve
 ```
 
-Open http://127.0.0.1:8000. `demo` generates five synthetic leases, OCRs the scanned one, ingests all of them, extracts seven terms from each, and leaves the review queue ready. No keys, no external services.
+Open http://127.0.0.1:8000. `demo` generates five synthetic leases, OCRs the scanned one, ingests all of them, extracts seven terms from each, and leaves the review queue ready. `auth set-password` creates the local admin account. No keys, no external services.
 
 Other entry points:
 
@@ -60,7 +61,31 @@ uv run paperproof extract <doc_id>
 uv run paperproof search "subletting consent"
 uv run paperproof eval --verbose     # golden set
 uv run paperproof stats
+uv run paperproof auth status
 ```
+
+## Authentication
+
+Paperproof ships with one local admin account. Create it once:
+
+```bash
+uv run paperproof auth set-password
+```
+
+![Sign in](docs/login.png)
+
+Sessions are signed, HttpOnly, SameSite=Lax cookies. Every state-changing form carries a CSRF token. Failed logins trigger a temporary lockout.
+
+For a production deployment:
+
+```bash
+PAPERPROOF_ENV=prod
+PAPERPROOF_SESSION_SECRET=<at least 32 random bytes>
+```
+
+`PAPERPROOF_AUTH_DISABLED=1` is allowed only with `PAPERPROOF_ENV=dev`. If no session secret is provided, one is generated at `data/session-secret` with mode 0600.
+
+The pilot is single-admin. Roles, SSO, and tenant isolation are M3.
 
 ## What you can do
 
@@ -144,7 +169,7 @@ The set includes a lease that is deliberately silent on three clauses and a scan
 - **Lexical embeddings.** The default embedder hashes words, bigrams, and character n-grams. It is deterministic and dependency free. Swap it behind the `Embedder` protocol for semantic recall.
 - **Rule baseline.** Rules are fast, offline, and inspectable, but brittle on unusual drafting. The LLM path is the quality path.
 - **Single node.** SQLite, FTS5, and in-process rendering. Fine for a team and a few thousand documents. Postgres with pgvector is the scale path.
-- **No authentication.** The server binds to `127.0.0.1` by default. Do not expose it without an auth layer.
+- **Single admin.** One local account, no roles, SSO, or per-tenant isolation. Login lockout is in memory, so it resets on restart and does not span workers.
 - **No amendment reasoning.** Version chains and effective dates are modeled in the roadmap, not the current schema.
 - **Line-level boxes.** Highlights are unions of word boxes per line, not character-level ranges.
 
@@ -152,7 +177,7 @@ The set includes a lease that is deliberately silent on three clauses and a scan
 
 ```text
 src/paperproof/
-  api/            FastAPI app, routes, presenters, Jinja templates, CSS, JS
+  api/            FastAPI app, auth middleware, routes, presenters, templates, CSS, JS
   extract/        templates, rules, LLM client, verifier, orchestration
   ingest/         PDF parsing, OCR, chunking, pipeline
   search/         embedder, indexing, hybrid retrieval
@@ -178,14 +203,14 @@ make demo
 make serve
 ```
 
-The test suite covers quote normalization and fuzzy matching, chunking, rule parsers, PDF parsing, local OCR, ingestion idempotency, hybrid search, extraction, review flow, API rendering, upload, the LLM client with a mock transport, and the full golden set.
+The test suite covers quote normalization and fuzzy matching, chunking, rule parsers, PDF parsing, local OCR, ingestion idempotency, hybrid search, extraction, review flow, authentication and CSRF, API rendering, upload, the LLM client with a mock transport, and the full golden set.
 
 ## Production roadmap
 
 1. OCR confidence review and a cloud fallback for low-confidence pages.
 2. Real embeddings (fastembed, sentence-transformers) behind the existing protocol.
 3. Postgres and pgvector, plus object storage for originals and renders.
-4. Auth, row-level permissions, and tenant isolation.
+4. Roles, SSO, and tenant isolation.
 5. Effective-date and amendment reasoning with document version chains.
 6. Reviewer assignments, bulk actions, and export to CSV or Excel.
 7. Parser isolation for hostile PDFs, plus malware scanning.

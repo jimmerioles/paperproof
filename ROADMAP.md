@@ -10,13 +10,13 @@ Working today:
 
 - Verified citations with exact and fuzzy matching, printed page labels, and highlight boxes.
 - Review desk with approve and reject, source viewer, search, and audit log.
+- Single-admin authentication with signed sessions, CSRF, and login lockout.
 - Local OCR for scanned leases with per-page confidence and a visible low-confidence warning.
 - Offline rule extractor and an OpenAI-compatible LLM extractor.
 - 35 case synthetic golden set, 46 tests, CI, Dockerfile, and a source-available license.
 
 Missing for a pilot:
 
-- Authentication and CSRF protection.
 - Neural embeddings.
 - Deployment, backups, and observability.
 - An eval set built from real documents.
@@ -57,7 +57,7 @@ See [docs/PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md) for the line-by
 1. [x] OCR pipeline for scanned PDFs.
 2. [ ] Neural embeddings behind the `Embedder` protocol.
 3. [ ] Real-document eval set with per-field metrics.
-4. [ ] Authentication, sessions, and CSRF.
+4. [x] Authentication, sessions, and CSRF.
 5. [ ] Backup and restore drill.
 6. [ ] Structured logs, request IDs, and cost tracking.
 7. [ ] Deployment bundle with TLS and healthchecks.

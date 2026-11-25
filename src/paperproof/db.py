@@ -13,7 +13,7 @@ from typing import Any
 
 from paperproof.config import Settings
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS documents (
@@ -118,6 +118,14 @@ CREATE TABLE IF NOT EXISTS audit_log (
     detail_json TEXT NOT NULL DEFAULT '{}'
 );
 CREATE INDEX IF NOT EXISTS audit_at_idx ON audit_log(at DESC);
+
+CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    username TEXT NOT NULL UNIQUE COLLATE NOCASE,
+    password_hash TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+);
 """
 
 MIGRATIONS: dict[int, list[str]] = {
@@ -128,6 +136,15 @@ MIGRATIONS: dict[int, list[str]] = {
         "ALTER TABLE pages ADD COLUMN ocr INTEGER NOT NULL DEFAULT 0",
         "ALTER TABLE pages ADD COLUMN ocr_confidence REAL",
         "ALTER TABLE pages ADD COLUMN ocr_engine TEXT",
+    ],
+    3: [
+        "CREATE TABLE users ("
+        "id TEXT PRIMARY KEY, "
+        "username TEXT NOT NULL UNIQUE COLLATE NOCASE, "
+        "password_hash TEXT NOT NULL, "
+        "created_at TEXT NOT NULL, "
+        "updated_at TEXT NOT NULL"
+        ")",
     ],
 }
 

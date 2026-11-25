@@ -22,6 +22,8 @@ dependencies = [
   "rich>=13.9",
   "reportlab>=4.2",
   "pytesseract>=0.3.13",
+  "argon2-cffi>=25.1.0",
+  "itsdangerous>=2.2.0",
 ]
 
 [dependency-groups]
@@ -52,7 +54,7 @@ select = ["E", "F", "I", "UP", "B", "SIM", "RUF", "ASYNC", "S"]
 ignore = ["S101", "B008"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["S101"]
+"tests/*" = ["S101", "S105", "S106"]
 "src/paperproof/samples.py" = ["E501"]
 
 [tool.pyright]

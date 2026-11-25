@@ -7,8 +7,9 @@ This repository is built to be changed safely by coding agents and humans. Read 
 ```bash
 uv sync                     # install
 uv run paperproof demo      # seed ./data with the sample corpus
+uv run paperproof auth set-password  # create the local admin
 uv run paperproof serve     # http://127.0.0.1:8000
-uv run pytest               # 46 tests
+uv run pytest               # 60 tests
 uv run ruff check .         # lint
 uv run ruff format .        # format
 uv run pyright              # type check
@@ -19,10 +20,11 @@ make check                  # everything above except serve
 ## Architecture in one screen
 
 ```text
-api/         FastAPI routes, Jinja templates, presenters, static assets
+api/         FastAPI routes, auth middleware, templates, presenters, static assets
 extract/     FieldSpec + Template, RuleExtractor, LLMExtractor, verify_quote, service
 ingest/      parse_pdf -> Pages/Words, OCR for scans, chunk_pages, ingest_file
 search/      HashingEmbedder, index_chunks, hybrid search with RRF
+auth.py      password hashing, signed sessions, CSRF, login limiter
 db.py        schema, connection helpers, audit()
 evaluation.py golden-set runner
 samples.py   synthetic lease PDFs
@@ -44,6 +46,7 @@ The web app is server-rendered. No Node build step. CSS and JS live in `api/stat
 10. **Keep the trust boundary small.** New extraction paths must return `Candidate` and go through `extract_document`. Do not add a second path to the database.
 11. **Keep the license story accurate.** The project is source-available under FSL-1.1-ALv2, not OSI open source. Do not relabel it as MIT or "open source" in docs, package metadata, or the UI.
 12. **OCR text is untrusted.** Page text recovered by OCR can contain mistakes. Verify quotes against that text, expose the confidence, and never hide the OCR state from the reviewer.
+13. **Do not bypass authentication or CSRF.** Every state-changing route depends on `csrf_protect`. Do not disable auth outside `PAPERPROOF_ENV=dev`, and do not add a new POST route without the dependency.
 
 ## Where to change things
 
@@ -57,6 +60,8 @@ The web app is server-rendered. No Node build step. CSS and JS live in `api/stat
 | Add a route | `api/routes.py` |
 | Change the review UI | `api/templates/document.html`, `api/static/app.css`, `api/static/app.js` |
 | Add a CLI command | `cli.py` |
+| Change authentication | `auth.py`, `api/auth_middleware.py`, `api/auth_routes.py` |
+| Add a POST route | `api/routes.py`, include `Depends(csrf_protect)` and a CSRF hidden field |
 | Add a golden case | `evals/cases.jsonl` |
 | Change the schema | `db.py` plus a migration |
 

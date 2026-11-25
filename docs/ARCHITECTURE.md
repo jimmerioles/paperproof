@@ -203,11 +203,21 @@ The eval runs on every CI push. Prompt, parser, and retrieval changes are not do
 
 Assumptions: local or trusted network, single team, no hostile multi-tenant users.
 
+### Authentication and sessions
+
+A single admin account is stored in the `users` table with an Argon2id hash. Login creates a signed session cookie with a per-session CSRF token. The auth middleware loads the session, checks the user against the database, and redirects anonymous visitors to `/login`. Every state-changing form carries a hidden CSRF token and every POST route depends on `csrf_protect`.
+
+Session cookies are HttpOnly, SameSite=Lax, and Secure when `PAPERPROOF_ENV=prod`. The signing secret comes from `PAPERPROOF_SESSION_SECRET` or a 0600 file under the data directory. Failed logins lock out per IP and username for a configurable window. The limiter is in memory, which is enough for one process and a pilot.
+
+`PAPERPROOF_AUTH_DISABLED=1` exists for local development and is rejected outside `PAPERPROOF_ENV=dev`.
+
+### Other controls
+
 - Uploads are size limited and stored under generated IDs. Original filenames are never used as paths.
 - All SQL is parameterized. FTS input is tokenized.
 - Jinja autoescaping is on. The only `safe` filter is for search snippets that are escaped before `<mark>` insertion.
 - CSP forbids inline scripts and external origins. Fonts are vendored.
-- The server binds to `127.0.0.1` by default. There is no auth. Do not expose it.
+- The server binds to `127.0.0.1` by default. Authentication is enabled by default; set `PAPERPROOF_ENV=prod` and terminate TLS before exposing it.
 - OCR runs locally with Tesseract. Scanned pages are not sent to an external service.
 - LLM mode sends only retrieved passages to the configured endpoint. If documents are sensitive, use a local model or a provider with the right data terms.
 - Retrieved text is untrusted input for the LLM. The prompt says to ignore instructions inside passages, but prompt injection is still possible. The verifier limits the damage to incorrect extraction, and a human must approve before a record is final. The LLM has no tools and no write access.

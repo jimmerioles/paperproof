@@ -104,7 +104,9 @@ def test_v1_database_migrates_to_ocr_schema(tmp_path: Path) -> None:
     version = conn.execute("PRAGMA user_version").fetchone()[0]
     document_columns = {row[1] for row in conn.execute("PRAGMA table_info(documents)")}
     page_columns = {row[1] for row in conn.execute("PRAGMA table_info(pages)")}
+    tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
     conn.close()
-    assert version == 2
+    assert version == 3
     assert {"ocr_pages", "ocr_confidence", "ocr_low_confidence"} <= document_columns
     assert {"ocr", "ocr_confidence", "ocr_engine"} <= page_columns
+    assert "users" in tables

@@ -26,7 +26,19 @@
         <a class="nav-link{% if active == 'audit' %} is-active{% endif %}" href="/audit">Audit log</a>
       </nav>
       <div class="rail-foot">
-        <span class="rail-note">Local review desk</span>
+        <div class="rail-user">
+          {% if request.app.state.settings.auth_disabled %}
+          <span class="rail-note">Dev mode</span>
+          {% elif request.state.user %}
+          <span class="rail-note">{{ request.state.user.username }}</span>
+          <form method="post" action="/logout" class="rail-signout">
+            <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
+            <button class="link-btn" type="submit">Sign out</button>
+          </form>
+          {% else %}
+          <span class="rail-note">Local review desk</span>
+          {% endif %}
+        </div>
         <span class="rail-version">v0.1</span>
       </div>
     </aside>

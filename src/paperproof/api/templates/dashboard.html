@@ -24,6 +24,7 @@
     <p class="lede">Paperproof pulls the key terms out of a lease, then proves each one against the exact clause and page. Nothing is shown until the quote is verified.</p>
 
     <form class="intake" method="post" action="/documents" enctype="multipart/form-data" id="upload-form">
+      <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
       <label class="dropzone" id="dropzone" for="file-input">
         <span class="drop-plus" aria-hidden="true">+</span>
         <span class="drop-copy">
@@ -40,6 +41,7 @@
 
     {% if empty %}
     <form method="post" action="/samples" class="sample-form">
+      <input type="hidden" name="csrf_token" value="{{ request.state.csrf_token }}">
       <button class="link-btn" type="submit">No files handy? Load five sample leases</button>
     </form>
     {% endif %}

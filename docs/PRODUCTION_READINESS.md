@@ -33,19 +33,19 @@ Current verdict: **demo-ready, not pilot-ready**.
 
 | Gate | Pilot | GA | Status | Evidence |
 | --- | --- | --- | --- | --- |
-| Authentication on every route | Yes | Yes | Missing | Local app has no login |
-| CSRF protection on state-changing forms | Yes | Yes | Missing | No token today |
-| Authorization and tenant isolation | No | Yes | Missing | Single user |
+| Authentication on every route | Yes | Yes | Done | `api/auth_middleware.py` |
+| CSRF protection on state-changing forms | Yes | Yes | Done | `csrf_protect`, hidden tokens |
+| Authorization and tenant isolation | No | Yes | Missing | Single admin |
 | Upload size limits | Yes | Yes | Done | `max_upload_mb` |
 | Upload content validation | Yes | Yes | Partial | Suffix check plus parser failure |
 | Parser isolation, timeouts, and memory limits | Yes | Yes | Missing | In-process parsing |
 | Malware scanning for uploads | No | Yes | Missing | Not implemented |
-| Rate limiting | Yes | Yes | Missing | None |
-| Secrets kept out of the repo | Yes | Yes | Partial | `.env` locally, no secret manager |
+| Rate limiting | Yes | Yes | Partial | Login lockout only, in memory |
+| Secrets kept out of the repo | Yes | Yes | Partial | `.env`, 0600 session secret file, no vault |
 | Dependency vulnerability scan in CI | Yes | Yes | Missing | `pip-audit` or equivalent not wired |
 | CSP and security headers | Yes | Yes | Done | `api/factory.py` middleware |
 | TLS in front of the app | Yes | Yes | Missing | Local HTTP only |
-| Session cookie hardening | Yes | Yes | Missing | No sessions |
+| Session cookie hardening | Yes | Yes | Done | HttpOnly, SameSite=Lax, Secure in prod |
 | Audit log tamper evidence | No | Yes | Partial | Append-only table, no hash chain |
 | Prompt injection containment | Yes | Yes | Partial | No tools, verifier gate, human review |
 
@@ -138,6 +138,8 @@ Current verdict: **demo-ready, not pilot-ready**.
 - The 35 case eval is synthetic. It proves the loop, not real-world accuracy.
 - The hash embedder is lexical. It is deterministic and hermetic, not semantic.
 - OCR is local Tesseract only. Cloud fallback and handwriting are not implemented.
+- Authentication is one local admin. Roles, SSO, and tenant isolation are not built.
+- Login lockout is in memory, so it resets on restart and does not span multiple workers.
 
 ## How to update this document
 

@@ -6,6 +6,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -33,6 +34,15 @@ class Settings(BaseSettings):
     ocr_dpi: int = 300
     ocr_min_chars: int = 40
     ocr_low_confidence: float = 60.0
+
+    # Authentication
+    env: Literal["dev", "prod"] = "dev"
+    auth_disabled: bool = False
+    session_secret: str | None = None
+    session_ttl_seconds: int = 12 * 60 * 60
+    login_max_attempts: int = 5
+    login_window_seconds: int = 5 * 60
+    login_lockout_seconds: int = 5 * 60
 
     # Extraction
     extractor: str = "auto"  # auto | rules | llm
@@ -62,6 +72,18 @@ class Settings(BaseSettings):
     @property
     def sample_dir(self) -> Path:
         return self.data_dir / "samples"
+
+    @property
+    def secure_cookies(self) -> bool:
+        return self.env == "prod"
+
+    @model_validator(mode="after")
+    def _validate_auth(self) -> Settings:
+        if self.auth_disabled and self.env != "dev":
+            raise ValueError("PAPERPROOF_AUTH_DISABLED is only allowed when PAPERPROOF_ENV=dev.")
+        if self.session_ttl_seconds < 60:
+            raise ValueError("PAPERPROOF_SESSION_TTL_SECONDS must be at least 60.")
+        return self
 
     def ensure_dirs(self) -> None:
         for path in (self.data_dir, self.upload_dir, self.render_dir, self.sample_dir):

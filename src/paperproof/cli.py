@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sys
 from pathlib import Path
 
 import typer
@@ -10,8 +11,9 @@ from rich.panel import Panel
 from rich.table import Table
 
 from paperproof.api.presenters import format_value
+from paperproof.auth import count_users, set_admin_password
 from paperproof.config import get_settings
-from paperproof.db import init_db, session
+from paperproof.db import audit, init_db, session
 from paperproof.extract.service import extract_document
 from paperproof.ingest.pipeline import ingest_file
 from paperproof.samples import generate_samples
@@ -22,7 +24,61 @@ app = typer.Typer(
     no_args_is_help=True,
     help="Paperproof: document intelligence where every answer is page-checked.",
 )
+auth_app = typer.Typer(no_args_is_help=True, help="Manage the local admin account.")
+app.add_typer(auth_app, name="auth")
 console = Console()
+
+
+@auth_app.command("set-password")
+def auth_set_password(
+    username: str = typer.Option("admin", "--username", "-u"),
+    password_stdin: bool = typer.Option(
+        False, "--password-stdin", help="Read the password from standard input."
+    ),
+) -> None:
+    """Create the admin account or change its password."""
+    settings = get_settings()
+    settings.ensure_dirs()
+    if password_stdin:
+        password = sys.stdin.readline().rstrip("\n")
+    else:
+        password = typer.prompt(
+            "New password",
+            hide_input=True,
+            confirmation_prompt=True,
+        )
+    try:
+        with session(settings) as conn:
+            action = set_admin_password(conn, username, password)
+            audit(
+                conn,
+                actor="cli",
+                action=f"auth.password_{action}",
+                detail={"username": username},
+            )
+    except ValueError as exc:
+        console.print(f"[red]{exc}[/red]")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        f"Admin [bold]{username}[/bold] {action}. Sign in at http://{settings.host}:{settings.port}/login"
+    )
+
+
+@auth_app.command("status")
+def auth_status() -> None:
+    """Show whether an admin account exists."""
+    settings = get_settings()
+    with session(settings) as conn:
+        rows = conn.execute("SELECT username, updated_at FROM users ORDER BY username").fetchall()
+    if not rows:
+        console.print("No admin account. Run [bold]paperproof auth set-password[/bold].")
+        return
+    table = Table(title="Admin accounts")
+    table.add_column("Username")
+    table.add_column("Password updated")
+    for row in rows:
+        table.add_row(str(row["username"]), str(row["updated_at"]))
+    console.print(table)
 
 
 @app.command()
@@ -206,7 +262,7 @@ def stats() -> None:
 
 @app.command()
 def demo(force: bool = typer.Option(False, "--force")) -> None:
-    """Build the sample corpus, extract every text-based lease, and print IDs."""
+    """Build the sample corpus, OCR and extract it, and print IDs."""
     settings = get_settings()
     settings.ensure_dirs()
     paths = generate_samples(settings, force=force)
@@ -215,6 +271,7 @@ def demo(force: bool = typer.Option(False, "--force")) -> None:
         for result in results:
             if not result.needs_ocr:
                 extract_document(conn, settings, result.doc_id)
+        has_admin = count_users(conn) > 0
     table = Table(title="Demo ready")
     table.add_column("Document")
     table.add_column("Status")
@@ -228,6 +285,10 @@ def demo(force: bool = typer.Option(False, "--force")) -> None:
             f"http://127.0.0.1:{settings.port}/documents/{result.doc_id}",
         )
     console.print(table)
+    if not settings.auth_disabled and not has_admin:
+        console.print(
+            "No admin account yet. Run [bold]paperproof auth set-password[/bold] before signing in."
+        )
     console.print("Run [bold]paperproof serve[/bold], then open the URLs above.")
 
 
@@ -254,6 +315,15 @@ def serve(
     import uvicorn
 
     settings = get_settings()
+    if not settings.auth_disabled:
+        with session(settings) as conn:
+            has_admin = count_users(conn) > 0
+        if not has_admin:
+            console.print(
+                "[yellow]No admin account yet. Run[/yellow] "
+                "[bold]paperproof auth set-password[/bold] "
+                "[yellow]before signing in.[/yellow]"
+            )
     uvicorn.run(
         "paperproof.api.app:app",
         host=host or settings.host,

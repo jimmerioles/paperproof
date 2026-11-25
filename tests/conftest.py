@@ -26,7 +26,11 @@ def sample_paths(tmp_path_factory: pytest.TempPathFactory) -> list[Path]:
 
 @pytest.fixture()
 def settings(tmp_path: Path) -> Settings:
-    resolved = Settings(data_dir=tmp_path / "data")
+    resolved = Settings(
+        data_dir=tmp_path / "data",
+        auth_disabled=True,
+        session_secret="test-session-secret",
+    )
     resolved.ensure_dirs()
     return resolved
 
