@@ -55,6 +55,8 @@ uv run paperproof eval \
 
 Do not commit customer documents, cases, or reports. Keep them outside the repo or under a private path.
 
+A private sample of 20 real SEC lease exhibits is documented in [DATA_SOURCES.md](DATA_SOURCES.md). It is commercial leasing, not residential, and it is stored outside git.
+
 ## Metrics
 
 | Metric | Gate |
