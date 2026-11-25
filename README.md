@@ -115,6 +115,19 @@ PAPERPROOF_LLM_OUTPUT_COST_PER_MILLION=1.60
 
 The defaults match `gpt-4.1-mini` list price at the time of writing. Set them to your provider's current rates.
 
+## Deployment
+
+A single-node pilot runs with Docker Compose and Caddy:
+
+```bash
+cp .env.example .env
+# set PAPERPROOF_ENV=prod and PAPERPROOF_SESSION_SECRET
+docker compose up -d --build
+docker compose exec app paperproof auth set-password
+```
+
+Open https://localhost:8443. See [docs/DEPLOY.md](docs/DEPLOY.md) for TLS, backups, restore, upgrade, and rollback.
+
 ## What you can do
 
 - Upload PDFs with the drag and drop tray, or ingest a directory from the CLI.

@@ -18,6 +18,15 @@ uv run paperproof restore-drill  # backup and restore a throwaway library
 make check                  # lint, types, tests, eval, restore drill
 ```
 
+Deployment:
+
+```bash
+cp .env.example .env        # set PAPERPROOF_ENV=prod and a session secret
+docker compose up -d --build
+docker compose exec app paperproof auth set-password
+make deploy-smoke           # with SMOKE_BASE_URL and SMOKE_PASSWORD set
+```
+
 ## Architecture in one screen
 
 ```text
@@ -51,6 +60,7 @@ The web app is server-rendered. No Node build step. CSS and JS live in `api/stat
 13. **Do not bypass authentication or CSRF.** Every state-changing route depends on `csrf_protect`. Do not disable auth outside `PAPERPROOF_ENV=dev`, and do not add a new POST route without the dependency.
 14. **Backups contain customer data.** Keep them encrypted and access controlled. Restore into an empty target, and never include the session secret in a backup.
 15. **Logs are structured and private.** Use the JSON logger and request ID context. Log paths, status, duration, and user. Never log document text, passwords, tokens, or query strings.
+16. **Expose only Caddy.** The app container never publishes port 8000. Production uses `PAPERPROOF_ENV=prod`, TLS, and a real session secret. Do not add a public port for debugging.
 
 ## Where to change things
 
@@ -67,6 +77,7 @@ The web app is server-rendered. No Node build step. CSS and JS live in `api/stat
 | Change authentication | `auth.py`, `api/auth_middleware.py`, `api/auth_routes.py` |
 | Change logging or request IDs | `logging.py`, `api/request_context.py` |
 | Change extraction cost tracking | `extract/llm.py`, `extract/service.py` |
+| Change deployment | `compose.yaml`, `deploy/Caddyfile`, `docs/DEPLOY.md` |
 | Add a POST route | `api/routes.py`, include `Depends(csrf_protect)` and a CSRF hidden field |
 | Add a golden case | `evals/cases.jsonl` |
 | Change the schema | `db.py` plus a migration |

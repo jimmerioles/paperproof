@@ -1,4 +1,4 @@
-.PHONY: setup demo serve test lint format type check eval samples restore-drill clean
+.PHONY: setup demo serve test lint format type check eval samples restore-drill up down logs deploy-smoke clean
 
 setup:
 	uv sync
@@ -30,6 +30,18 @@ eval:
 
 restore-drill:
 	uv run paperproof restore-drill
+
+up:
+	docker compose up -d --build
+
+down:
+	docker compose down
+
+logs:
+	docker compose logs -f app
+
+deploy-smoke:
+	uv run python scripts/smoke.py
 
 samples:
 	uv run paperproof samples --force

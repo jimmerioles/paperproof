@@ -14,13 +14,13 @@ Working today:
 - Local OCR for scanned leases with per-page confidence and a visible low-confidence warning.
 - Backup, restore, and a restore drill that runs in CI.
 - JSON request logs, request IDs, health checks, and per-field cost tracking.
+- Docker Compose deployment with Caddy TLS, healthchecks, upgrade, and rollback docs.
 - Offline rule extractor and an OpenAI-compatible LLM extractor.
-- 35 case synthetic golden set, 69 tests, CI, Dockerfile, and a source-available license.
+- 35 case synthetic golden set, 69 tests, CI, and a source-available license.
 
 Missing for a pilot:
 
 - Neural embeddings.
-- Deployment.
 - An eval set built from real documents.
 
 ## Production definition
@@ -62,7 +62,7 @@ See [docs/PRODUCTION_READINESS.md](docs/PRODUCTION_READINESS.md) for the line-by
 4. [x] Authentication, sessions, and CSRF.
 5. [x] Backup and restore drill.
 6. [x] Structured logs, request IDs, and cost tracking.
-7. [ ] Deployment bundle with TLS and healthchecks.
+7. [x] Deployment bundle with TLS and healthchecks.
 
 ## Phase 2: Team-ready
 

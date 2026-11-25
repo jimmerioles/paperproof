@@ -217,6 +217,14 @@ Each extraction stores metadata in `extractions.meta_json`: provider, model, pro
 
 `/healthz` is public and returns `ok` or `degraded` plus checks for the database, render directory writability, and free disk space. It returns HTTP 503 when a check fails.
 
+## Deployment
+
+A pilot runs as two containers: the app and Caddy. Caddy terminates TLS and is the only service with published ports. The app listens on the internal Docker network, runs as a non-root user, and stores the database, uploads, and renders on a named volume.
+
+The app runs with `PAPERPROOF_ENV=prod`, Secure cookies, and a session secret from the environment. Migrations run at startup. The container healthcheck calls `/healthz`; Caddy waits for the app to become healthy before starting.
+
+`docs/DEPLOY.md` covers the initial deploy, admin creation, backups, volume restore, image tagging, upgrade, rollback, and moving from the internal localhost certificate to a real domain. CI builds the image, starts the compose stack, seeds the demo, creates an admin, logs in over HTTPS, and checks the dashboard.
+
 ## Security and privacy
 
 Assumptions: local or trusted network, single team, no hostile multi-tenant users.

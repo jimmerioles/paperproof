@@ -44,8 +44,10 @@ Current verdict: **demo-ready, not pilot-ready**.
 | Secrets kept out of the repo | Yes | Yes | Partial | `.env`, 0600 session secret file, no vault |
 | Dependency vulnerability scan in CI | Yes | Yes | Missing | `pip-audit` or equivalent not wired |
 | CSP and security headers | Yes | Yes | Done | `api/factory.py` middleware |
-| TLS in front of the app | Yes | Yes | Missing | Local HTTP only |
+| TLS in front of the app | Yes | Yes | Done | Caddy compose bundle, CI smoke |
 | Session cookie hardening | Yes | Yes | Done | HttpOnly, SameSite=Lax, Secure in prod |
+| Container deployment with TLS | Yes | Yes | Done | `compose.yaml`, `docs/DEPLOY.md` |
+| Rollback path for a bad deploy | Yes | Yes | Done | image tag + `docs/DEPLOY.md` |
 | Audit log tamper evidence | No | Yes | Partial | Append-only table, no hash chain |
 | Prompt injection containment | Yes | Yes | Partial | No tools, verifier gate, human review |
 
@@ -75,7 +77,7 @@ Current verdict: **demo-ready, not pilot-ready**.
 | Idempotent ingestion and extraction | Yes | Yes | Done | SHA dedupe, upsert |
 | Background queue for large documents | No | Yes | Missing | Synchronous requests |
 | Graceful shutdown | Yes | Yes | Partial | Uvicorn default |
-| Rollback path for a bad deploy | Yes | Yes | Missing | No deploy yet |
+| Rollback path for a bad deploy | Yes | Yes | Done | image tag + `docs/DEPLOY.md` |
 | Structured logs | Yes | Yes | Done | JSON formatter, `logging.py` |
 | Request IDs | Yes | Yes | Done | `X-Request-ID`, error page |
 | Error tracking | Yes | Yes | Missing | None |
@@ -134,7 +136,7 @@ Current verdict: **demo-ready, not pilot-ready**.
 
 ## Known exceptions
 
-- The Docker image builds in CI, but the local environment cannot access the Docker socket, so there is no local deployment smoke test yet. This is tracked in the M1 deployment issue.
+- The Docker image and compose stack are built and smoke tested in CI. A local smoke test is not possible because this environment cannot access the Docker socket.
 - The 35 case eval is synthetic. It proves the loop, not real-world accuracy.
 - The hash embedder is lexical. It is deterministic and hermetic, not semantic.
 - OCR is local Tesseract only. Cloud fallback and handwriting are not implemented.
