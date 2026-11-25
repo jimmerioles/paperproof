@@ -9,12 +9,13 @@ uv sync                     # install
 uv run paperproof demo      # seed ./data with the sample corpus
 uv run paperproof auth set-password  # create the local admin
 uv run paperproof serve     # http://127.0.0.1:8000
-uv run pytest               # 72 tests
+uv run pytest               # 76 tests
 uv run ruff check .         # lint
 uv run ruff format .        # format
 uv run pyright              # type check
 uv run paperproof eval      # 35 case golden set
 uv run paperproof eval --cases PATH --docs DIR --report REPORT.csv  # private real set
+uv run paperproof corpus    # 100-doc synthetic corpus with labels
 uv run paperproof restore-drill  # backup and restore a throwaway library
 make check                  # lint, types, tests, eval, restore drill
 ```
@@ -79,6 +80,7 @@ The web app is server-rendered. No Node build step. CSS and JS live in `api/stat
 | Change logging or request IDs | `logging.py`, `api/request_context.py` |
 | Change extraction cost tracking | `extract/llm.py`, `extract/service.py` |
 | Label a real eval set | `docs/EVALS.md`, `evals/cases.jsonl` |
+| Generate the synthetic corpus | `synthetic.py`, `docs/SYNTHETIC_CORPUS.md` |
 | Change deployment | `compose.yaml`, `deploy/Caddyfile`, `docs/DEPLOY.md` |
 | Add a POST route | `api/routes.py`, include `Depends(csrf_protect)` and a CSRF hidden field |
 | Add a golden case | `evals/cases.jsonl` |

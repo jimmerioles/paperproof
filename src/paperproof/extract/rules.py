@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import re
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Any
 
 from paperproof.extract.base import Candidate
@@ -119,6 +119,8 @@ def _parse_subletting(text: str) -> RuleMatch | None:
 def _parse_renewal(text: str) -> RuleMatch | None:
     for sentence in _sentences(text):
         lowered = sentence.lower()
+        if "no renewal option" in lowered:
+            return RuleMatch(value="No renewal option.", quote=sentence, confidence=0.7)
         if "renew" not in lowered and "extend" not in lowered:
             continue
         if len(sentence.split()) < 5:
@@ -167,8 +169,15 @@ class RuleExtractor:
         if parser is None:
             return Candidate(abstained=True, reason="No rule parser for this field.")
         for hit in hits:
-            text = f"{hit.heading} {hit.text}" if hit.heading else hit.text
-            match = parser(text)
+            match = parser(hit.text)
+            if match is None and hit.heading:
+                match = parser(f"{hit.heading} {hit.text}")
+                if match is not None and len(hit.heading.split()) <= 6:
+                    quote = match.quote
+                    if quote.lower().startswith(hit.heading.lower()):
+                        trimmed = quote[len(hit.heading) :].lstrip(" .:-")
+                        if len(trimmed) >= 20:
+                            match = replace(match, quote=trimmed)
             if match:
                 return Candidate(
                     value=match.value,

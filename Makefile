@@ -1,4 +1,4 @@
-.PHONY: setup demo serve test lint format type check eval samples restore-drill up down logs deploy-smoke clean
+.PHONY: setup demo serve test lint format type check eval samples synthetic restore-drill up down logs deploy-smoke clean
 
 setup:
 	uv sync
@@ -45,6 +45,9 @@ deploy-smoke:
 
 samples:
 	uv run paperproof samples --force
+
+synthetic:
+	uv run paperproof corpus --count 100 --out data/synthetic --force
 
 clean:
 	rm -rf data .pytest_cache .ruff_cache .coverage htmlcov

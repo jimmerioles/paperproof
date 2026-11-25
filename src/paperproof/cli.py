@@ -19,6 +19,7 @@ from paperproof.extract.service import extract_document
 from paperproof.ingest.pipeline import ingest_file
 from paperproof.samples import generate_samples
 from paperproof.search.retrieve import make_snippet, query_terms, search
+from paperproof.synthetic import generate_synthetic_corpus
 
 app = typer.Typer(
     add_completion=False,
@@ -127,6 +128,42 @@ def samples(
         )
     console.print(table)
     console.print("Open the review desk with [bold]paperproof serve[/bold]")
+
+
+@app.command()
+def corpus(
+    count: int = typer.Option(100, "--count", "-n", min=1, max=500),
+    out: Path = typer.Option(Path("data/synthetic"), "--out", "-o"),
+    seed: int = typer.Option(7, "--seed"),
+    scan_rate: float = typer.Option(0.1, "--scan-rate", min=0.0, max=1.0),
+    force: bool = typer.Option(False, "--force", help="Replace a non-empty corpus directory."),
+) -> None:
+    """Generate a larger synthetic corpus with known labels."""
+    settings = get_settings()
+    settings.ensure_dirs()
+    try:
+        result = generate_synthetic_corpus(
+            settings,
+            out,
+            count=count,
+            seed=seed,
+            scan_rate=scan_rate,
+            force=force,
+        )
+    except (OSError, ValueError) as exc:
+        console.print(f"[red]Corpus generation failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
+    console.print(
+        f"Synthetic corpus ready at [bold]{result.path}[/bold]: "
+        f"{result.documents} documents, {result.cases} cases, "
+        f"{result.scanned} scans, {result.amendments} amendments, "
+        f"{result.silent_cases} abstentions."
+    )
+    console.print(
+        "Evaluate it with:\n"
+        f"[bold]paperproof eval --cases {result.cases_path} --docs {result.path} "
+        f"--report {result.path / 'report.csv'}[/bold]"
+    )
 
 
 @app.command()

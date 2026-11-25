@@ -82,6 +82,17 @@ The per-field table shows where the failures cluster. A field at 60% is a produc
 
 If retrieval misses paraphrased clauses, the eval will show low recall before any model change. That is the signal to add neural embeddings, not a hunch.
 
+## Synthetic corpus
+
+For volume, generate a larger labeled corpus:
+
+```bash
+uv run paperproof corpus --count 100 --out data/synthetic --seed 7 --scan-rate 0.1
+uv run paperproof eval --cases data/synthetic/cases.jsonl --docs data/synthetic --report data/synthetic/report.csv
+```
+
+It covers four layouts, scans, tables, amendments, silent clauses, and 700 labeled cases at the default size. It is a regression gate. It is not real-world evidence. See [SYNTHETIC_CORPUS.md](SYNTHETIC_CORPUS.md).
+
 ## Current synthetic result
 
 The 35 case set is 35/35 correct with 32/32 exact citations. It includes a silent lease and a scanned lease recovered by OCR. It does not have human support labels, so support is reported as not labeled.

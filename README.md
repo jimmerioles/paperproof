@@ -220,6 +220,17 @@ uv run paperproof eval \
 
 Cases support `value`, `contains`, `abstain`, `support`, `page`, and `quote_contains`. `support` is the human label for whether the verified quote actually proves the value. See [docs/EVALS.md](docs/EVALS.md) for the schema, labeling workflow, thresholds, and per-field metrics.
 
+### Synthetic corpus
+
+For volume and format coverage, generate 100 varied leases with known labels:
+
+```bash
+uv run paperproof corpus --count 100 --out data/synthetic --seed 7 --scan-rate 0.1
+uv run paperproof eval --cases data/synthetic/cases.jsonl --docs data/synthetic --report data/synthetic/report.csv
+```
+
+The corpus includes scans, tables, amendments, silent clauses, and four layouts. It is a regression gate, not real-world evidence. See [docs/SYNTHETIC_CORPUS.md](docs/SYNTHETIC_CORPUS.md).
+
 ## Limits, stated plainly
 
 - **Local OCR only.** Tesseract handles scans on the machine. Cloud OCR for low-confidence pages is not implemented, and handwriting is out of scope.
@@ -263,7 +274,7 @@ make demo
 make serve
 ```
 
-The test suite covers quote normalization and fuzzy matching, chunking, rule parsers, PDF parsing, local OCR, ingestion idempotency, hybrid search, extraction, review flow, authentication and CSRF, backup and restore, JSON logging and request IDs, custom eval cases, API rendering, upload, the LLM client with a mock transport, and the full golden set.
+The test suite covers quote normalization and fuzzy matching, chunking, rule parsers, PDF parsing, local OCR, ingestion idempotency, hybrid search, extraction, review flow, authentication and CSRF, backup and restore, JSON logging and request IDs, custom eval cases, synthetic corpus generation, API rendering, upload, the LLM client with a mock transport, and the full golden set.
 
 ## Production roadmap
 

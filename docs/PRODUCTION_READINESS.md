@@ -22,6 +22,7 @@ Current verdict: **demo-ready, not pilot-ready**.
 | OCR confidence is visible per page | Yes | Yes | Done | Document banner, source view, `ocr-pill` |
 | Synthetic golden set passes in CI | Yes | Yes | Done | `evals/cases.jsonl`, CI |
 | Private case-set importer with per-field metrics | Yes | Yes | Done | `paperproof eval --cases --docs --report` |
+| 100-document synthetic corpus with varied layouts | Yes | Yes | Done | `paperproof corpus` |
 | 200+ labeled fields from real leases | Yes | Yes | Missing | No real corpus yet |
 | Per-field accuracy, precision, recall, and false confidence | Yes | Yes | Done | `paperproof eval`, CSV report |
 | LLM mode evaluated against a real provider | Yes | Yes | Partial | Mock transport tests only |
@@ -138,7 +139,8 @@ Current verdict: **demo-ready, not pilot-ready**.
 ## Known exceptions
 
 - The Docker image and compose stack are built and smoke tested in CI. A local smoke test is not possible because this environment cannot access the Docker socket.
-- The 35 case eval is synthetic. It proves the loop, not real-world accuracy.
+- The 35 case golden set is synthetic, and the 100-document corpus is generated. They prove the loop, not real-world accuracy.
+- The synthetic amendments confirm terms. Conflicting versions and effective dates are not tested.
 - The hash embedder is lexical. It is deterministic and hermetic, not semantic.
 - OCR is local Tesseract only. Cloud fallback and handwriting are not implemented.
 - Authentication is one local admin. Roles, SSO, and tenant isolation are not built.
