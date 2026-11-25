@@ -44,6 +44,12 @@ class Settings(BaseSettings):
     login_window_seconds: int = 5 * 60
     login_lockout_seconds: int = 5 * 60
 
+    # Observability
+    log_level: str = "INFO"
+    health_min_free_mb: int = 100
+    llm_input_cost_per_million: float = 0.40
+    llm_output_cost_per_million: float = 1.60
+
     # Extraction
     extractor: str = "auto"  # auto | rules | llm
     llm_base_url: str | None = None

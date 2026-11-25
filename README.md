@@ -99,6 +99,22 @@ The backup contains a consistent SQLite snapshot, uploads, rendered pages, and a
 
 Backups contain customer documents. Encrypt the backup volume and restrict access. Off-site storage is not implemented yet. The restore drill runs in CI.
 
+## Observability
+
+- JSON logs go to stdout with `request_id`, method, path, status, duration, and user.
+- Every response carries `X-Request-ID`. Error pages show it.
+- `/healthz` checks the database, render directory writability, and free disk space. It returns 503 when degraded.
+- Extraction audit and per-field metadata include provider, model, prompt version, duration, tokens, and estimated cost.
+
+Cost estimates use per-million token rates:
+
+```bash
+PAPERPROOF_LLM_INPUT_COST_PER_MILLION=0.40
+PAPERPROOF_LLM_OUTPUT_COST_PER_MILLION=1.60
+```
+
+The defaults match `gpt-4.1-mini` list price at the time of writing. Set them to your provider's current rates.
+
 ## What you can do
 
 - Upload PDFs with the drag and drop tray, or ingest a directory from the CLI.
@@ -193,6 +209,9 @@ src/paperproof/
   extract/        templates, rules, LLM client, verifier, orchestration
   ingest/         PDF parsing, OCR, chunking, pipeline
   search/         embedder, indexing, hybrid retrieval
+  auth.py         passwords, sessions, CSRF, login limiter
+  backup.py       backup, restore, restore drill
+  logging.py      JSON logs and request context
   config.py       typed settings with PAPERPROOF_ prefix
   db.py           SQLite schema, connections, audit helpers
   samples.py      synthetic lease corpus
@@ -215,7 +234,7 @@ make demo
 make serve
 ```
 
-The test suite covers quote normalization and fuzzy matching, chunking, rule parsers, PDF parsing, local OCR, ingestion idempotency, hybrid search, extraction, review flow, authentication and CSRF, API rendering, upload, the LLM client with a mock transport, and the full golden set.
+The test suite covers quote normalization and fuzzy matching, chunking, rule parsers, PDF parsing, local OCR, ingestion idempotency, hybrid search, extraction, review flow, authentication and CSRF, backup and restore, JSON logging and request IDs, API rendering, upload, the LLM client with a mock transport, and the full golden set.
 
 ## Production roadmap
 

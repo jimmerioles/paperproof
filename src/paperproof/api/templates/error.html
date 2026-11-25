@@ -2,7 +2,7 @@
 {% block title %}{{ status }} · Paperproof{% endblock %}
 {% block content %}
 <div class="error-page">
-  <p class="error-code">HTTP {{ status }}</p>
+  <p class="error-code">HTTP {{ status }}{% if request_id %} / Request ID {{ request_id }}{% endif %}</p>
   <h1>{% if status == 404 %}Page not found.{% else %}Something went wrong.{% endif %}</h1>
   <p>{{ detail }}</p>
   <p><a class="btn" href="/">Back to documents</a></p>

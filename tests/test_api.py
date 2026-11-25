@@ -120,7 +120,22 @@ def test_upload_ingests_pdf(
 def test_healthz(client: TestClient) -> None:
     response = client.get("/healthz")
     assert response.status_code == 200
-    assert response.json()["status"] == "ok"
+    payload = response.json()
+    assert payload["status"] == "ok"
+    assert payload["checks"] == {"database": "ok", "renders": "ok", "disk": "ok"}
+
+
+def test_request_id_is_returned_and_shown_on_errors(client: TestClient) -> None:
+    response = client.get("/")
+    request_id = response.headers.get("x-request-id")
+    assert request_id
+    assert len(request_id) >= 8
+
+    error = client.get("/missing", headers={"accept": "text/html"})
+    error_id = error.headers.get("x-request-id")
+    assert error_id
+    assert error_id in error.text
+    assert "Request ID" in error.text
 
 
 @requires_tesseract

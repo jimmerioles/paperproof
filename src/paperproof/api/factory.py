@@ -13,11 +13,13 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from paperproof import __version__
 from paperproof.api.auth_middleware import AuthMiddleware
 from paperproof.api.auth_routes import router as auth_router
+from paperproof.api.request_context import RequestContextMiddleware
 from paperproof.api.routes import router
 from paperproof.api.templating import templates
 from paperproof.auth import LoginLimiter, SessionManager, load_session_secret
 from paperproof.config import Settings, get_settings
 from paperproof.db import init_db, session
+from paperproof.logging import configure_logging
 
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -25,6 +27,7 @@ STATIC_DIR = Path(__file__).parent / "static"
 def create_app(settings: Settings | None = None) -> FastAPI:
     resolved = settings or get_settings()
     resolved.ensure_dirs()
+    configure_logging(resolved.log_level)
 
     @asynccontextmanager
     async def lifespan(_: FastAPI):
@@ -86,9 +89,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                     "active": "",
                     "status": exc.status_code,
                     "detail": str(exc.detail),
+                    "request_id": getattr(request.state, "request_id", None),
                 },
                 status_code=exc.status_code,
             )
         return JSONResponse({"detail": exc.detail}, status_code=exc.status_code)
+
+    app.add_middleware(RequestContextMiddleware)
 
     return app

@@ -7,7 +7,7 @@ import httpx
 import pytest
 
 from paperproof.config import Settings
-from paperproof.extract.llm import LLMExtractor
+from paperproof.extract.llm import PROMPT_VERSION, LLMExtractor, estimate_cost
 from paperproof.extract.templates import LEASE
 from paperproof.search.retrieve import Hit
 
@@ -72,6 +72,8 @@ def test_llm_extracts_and_preserves_quote(tmp_path: Path) -> None:
     assert candidate.value == 24
     assert candidate.quote == "The term of this Lease is twenty-four (24) months."
     assert candidate.confidence == 0.92
+    assert candidate.meta["provider"] == "llm.test"
+    assert candidate.meta["prompt_version"] == PROMPT_VERSION
     assert seen["model"] == "test-model"
     assert seen["response_format"] == {"type": "json_object"}
     messages = seen["messages"]
@@ -143,3 +145,9 @@ def test_llm_malformed_json_raises(tmp_path: Path) -> None:
             extractor.extract(LEASE.fields[0], "Lease", [make_hit()])
     finally:
         extractor.close()
+
+
+def test_cost_estimate() -> None:
+    assert estimate_cost(0, 0, 0.40, 1.60) == 0.0
+    assert estimate_cost(1_000_000, 1_000_000, 0.40, 1.60) == 2.0
+    assert estimate_cost(2_000, 500, 0.40, 1.60) == 0.0016

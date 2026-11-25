@@ -104,7 +104,7 @@ SQLite, WAL mode, foreign keys on.
 | `chunks` | Section-aware passages with heading, ordinal, and page range. |
 | `chunks_fts` | FTS5 external-content index over chunk text and headings, porter stemming. |
 | `embeddings` | Float32 vectors as blobs, one per chunk. |
-| `extractions` | One row per document, template, and field. Unique constraint makes reruns idempotent. |
+| `extractions` | One row per document, template, and field. Stores the verified quote, boxes, confidence, review state, and per-field run metadata (provider, model, prompt version, duration, tokens, cost). |
 | `audit_log` | Append-only event log with actor, action, entity, and JSON detail. |
 
 Extraction statuses form a small state machine:
@@ -206,6 +206,16 @@ The eval runs on every CI push. Prompt, parser, and retrieval changes are not do
 The session secret is deliberately not included. Users and password hashes come back with the database, but existing browser sessions are invalidated and the admin signs in again. `paperproof restore-drill` creates a throwaway library, backs it up, restores it, and compares row counts. The drill runs in CI.
 
 Backups contain customer documents and are not encrypted by the application. Encrypt the backup volume or destination, restrict access, and add off-site storage before a pilot.
+
+## Observability
+
+Every request gets a request ID from `RequestContextMiddleware`, stored in a context variable, returned in `X-Request-ID`, and included in the error page. The middleware logs one JSON line per request with method, path, status, duration, and username. Static assets and health checks are excluded to keep logs quiet.
+
+`paperproof/logging.py` configures a JSON formatter on stdout and disables uvicorn's plain access log. Uvicorn runs with `log_config=None` so its own logging does not overwrite the JSON handler.
+
+Each extraction stores metadata in `extractions.meta_json`: provider, model, prompt version, duration, prompt and completion tokens, and an estimated cost. The same values are aggregated into the `document.extracted` audit event. Cost rates are configuration, not hardcoded invoices.
+
+`/healthz` is public and returns `ok` or `degraded` plus checks for the database, render directory writability, and free disk space. It returns HTTP 503 when a check fails.
 
 ## Security and privacy
 

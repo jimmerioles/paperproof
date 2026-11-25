@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 from pydantic import BaseModel, Field
@@ -19,6 +20,19 @@ from paperproof.extract.templates import FieldSpec
 from paperproof.search.retrieve import Hit
 
 JSON_BLOCK = re.compile(r"\{.*\}", re.DOTALL)
+PROMPT_VERSION = "lease-extract-v1"
+
+
+def estimate_cost(
+    prompt_tokens: int,
+    completion_tokens: int,
+    input_per_million: float,
+    output_per_million: float,
+) -> float:
+    cost = (prompt_tokens / 1_000_000) * input_per_million + (
+        completion_tokens / 1_000_000
+    ) * output_per_million
+    return round(cost, 6)
 
 
 class LLMAnswer(BaseModel):
@@ -59,6 +73,7 @@ class LLMExtractor:
         self.settings = settings
         base = settings.llm_base_url.rstrip("/")
         self.url = base if base.endswith("/chat/completions") else f"{base}/chat/completions"
+        self.provider = urlparse(self.url).netloc or "openai-compatible"
         self.client = httpx.Client(timeout=settings.llm_timeout)
 
     def _headers(self) -> dict[str, str]:
@@ -168,7 +183,9 @@ Return the JSON object now."""
 
         usage = data.get("usage") or {}
         meta = {
+            "provider": self.provider,
             "model": self.settings.llm_model,
+            "prompt_version": PROMPT_VERSION,
             "prompt_tokens": usage.get("prompt_tokens"),
             "completion_tokens": usage.get("completion_tokens"),
         }

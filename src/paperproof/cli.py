@@ -385,6 +385,7 @@ def serve(
         host=host or settings.host,
         port=port or settings.port,
         reload=reload,
+        log_config=None,
     )
 
 

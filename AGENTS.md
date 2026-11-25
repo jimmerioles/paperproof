@@ -9,7 +9,7 @@ uv sync                     # install
 uv run paperproof demo      # seed ./data with the sample corpus
 uv run paperproof auth set-password  # create the local admin
 uv run paperproof serve     # http://127.0.0.1:8000
-uv run pytest               # 64 tests
+uv run pytest               # 69 tests
 uv run ruff check .         # lint
 uv run ruff format .        # format
 uv run pyright              # type check
@@ -26,6 +26,7 @@ extract/     FieldSpec + Template, RuleExtractor, LLMExtractor, verify_quote, se
 ingest/      parse_pdf -> Pages/Words, OCR for scans, chunk_pages, ingest_file
 search/      HashingEmbedder, index_chunks, hybrid search with RRF
 auth.py      password hashing, signed sessions, CSRF, login limiter
+logging.py   JSON logs and request-scoped context
 db.py        schema, connection helpers, audit()
 evaluation.py golden-set runner
 samples.py   synthetic lease PDFs
@@ -49,6 +50,7 @@ The web app is server-rendered. No Node build step. CSS and JS live in `api/stat
 12. **OCR text is untrusted.** Page text recovered by OCR can contain mistakes. Verify quotes against that text, expose the confidence, and never hide the OCR state from the reviewer.
 13. **Do not bypass authentication or CSRF.** Every state-changing route depends on `csrf_protect`. Do not disable auth outside `PAPERPROOF_ENV=dev`, and do not add a new POST route without the dependency.
 14. **Backups contain customer data.** Keep them encrypted and access controlled. Restore into an empty target, and never include the session secret in a backup.
+15. **Logs are structured and private.** Use the JSON logger and request ID context. Log paths, status, duration, and user. Never log document text, passwords, tokens, or query strings.
 
 ## Where to change things
 
@@ -63,6 +65,8 @@ The web app is server-rendered. No Node build step. CSS and JS live in `api/stat
 | Change the review UI | `api/templates/document.html`, `api/static/app.css`, `api/static/app.js` |
 | Add a CLI command | `cli.py` |
 | Change authentication | `auth.py`, `api/auth_middleware.py`, `api/auth_routes.py` |
+| Change logging or request IDs | `logging.py`, `api/request_context.py` |
+| Change extraction cost tracking | `extract/llm.py`, `extract/service.py` |
 | Add a POST route | `api/routes.py`, include `Depends(csrf_protect)` and a CSRF hidden field |
 | Add a golden case | `evals/cases.jsonl` |
 | Change the schema | `db.py` plus a migration |

@@ -4,13 +4,14 @@ from __future__ import annotations
 
 import json
 import sqlite3
+import time
 from dataclasses import dataclass
 from typing import Any
 
 from paperproof.config import Settings
 from paperproof.db import audit, new_id, one, utcnow
 from paperproof.extract.base import Candidate, Extractor
-from paperproof.extract.llm import LLMExtractor
+from paperproof.extract.llm import LLMExtractor, estimate_cost
 from paperproof.extract.rules import RuleExtractor
 from paperproof.extract.templates import Template, get_template
 from paperproof.extract.verify import Verification, load_pages, verify_quote
@@ -34,6 +35,7 @@ class ExtractionResult:
     verifier: str | None
     extractor: str
     reason: str | None
+    meta: dict[str, Any]
 
 
 def choose_extractor(settings: Settings) -> Extractor:
@@ -64,6 +66,7 @@ def _row_to_result(row: sqlite3.Row, template: Template) -> ExtractionResult:
         verifier=row["verifier"],
         extractor=str(row["extractor"]),
         reason=row["reason"],
+        meta=json.loads(row["meta_json"]) if row["meta_json"] else {},
     )
 
 
@@ -79,17 +82,19 @@ def _upsert(
     status: str,
     extractor: str,
     reason: str | None,
+    meta: dict[str, Any],
 ) -> None:
     conn.execute(
         "INSERT INTO extractions "
         "(id, doc_id, template, field, value_json, quote, pdf_page, printed_label, "
-        " boxes_json, confidence, status, verifier, extractor, reason, created_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
+        " boxes_json, confidence, status, verifier, extractor, reason, meta_json, created_at) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) "
         "ON CONFLICT(doc_id, template, field) DO UPDATE SET "
         " value_json=excluded.value_json, quote=excluded.quote, pdf_page=excluded.pdf_page, "
         " printed_label=excluded.printed_label, boxes_json=excluded.boxes_json, "
         " confidence=excluded.confidence, status=excluded.status, verifier=excluded.verifier, "
-        " extractor=excluded.extractor, reason=excluded.reason, created_at=excluded.created_at, "
+        " extractor=excluded.extractor, reason=excluded.reason, meta_json=excluded.meta_json, "
+        " created_at=excluded.created_at, "
         " reviewed_at=NULL, reviewer=NULL, review_note=NULL",
         (
             new_id("ext"),
@@ -106,6 +111,7 @@ def _upsert(
             verification.method if verification else None,
             extractor,
             reason,
+            json.dumps(meta, default=str),
             utcnow(),
         ),
     )
@@ -129,9 +135,17 @@ def extract_document(
     verified_count = 0
     abstained_count = 0
     failed_count = 0
+    run_started = time.perf_counter()
+    total_prompt_tokens = 0
+    total_completion_tokens = 0
+    total_cost = 0.0
+    models: set[str] = set()
+    providers: set[str] = set()
+    prompt_versions: set[str] = set()
 
     try:
         for field in template.fields:
+            field_started = time.perf_counter()
             hits = (
                 []
                 if needs_ocr
@@ -234,6 +248,28 @@ def extract_document(
                     f"LLM unavailable ({fallback_note}). Used the rule baseline. {reason or ''}"
                 ).strip()
 
+            meta = dict(candidate.meta)
+            meta.setdefault("provider", "local")
+            meta.setdefault("model", "rules")
+            meta.setdefault("prompt_version", "rules-v1")
+            meta["extractor"] = extractor_used
+            meta["duration_ms"] = round((time.perf_counter() - field_started) * 1000, 1)
+            prompt_tokens = int(meta.get("prompt_tokens") or 0)
+            completion_tokens = int(meta.get("completion_tokens") or 0)
+            cost = estimate_cost(
+                prompt_tokens,
+                completion_tokens,
+                settings.llm_input_cost_per_million,
+                settings.llm_output_cost_per_million,
+            )
+            meta["cost_usd"] = cost
+            total_prompt_tokens += prompt_tokens
+            total_completion_tokens += completion_tokens
+            total_cost += cost
+            models.add(str(meta["model"]))
+            providers.add(str(meta["provider"]))
+            prompt_versions.add(str(meta["prompt_version"]))
+
             _upsert(
                 conn,
                 doc_id,
@@ -246,6 +282,7 @@ def extract_document(
                 status,
                 extractor_used,
                 reason,
+                meta,
             )
     finally:
         if isinstance(extractor, LLMExtractor):
@@ -262,6 +299,13 @@ def extract_document(
             "verified": verified_count,
             "abstained": abstained_count,
             "failed": failed_count,
+            "duration_ms": round((time.perf_counter() - run_started) * 1000, 1),
+            "tokens_in": total_prompt_tokens,
+            "tokens_out": total_completion_tokens,
+            "cost_usd": round(total_cost, 6),
+            "models": sorted(models),
+            "providers": sorted(providers),
+            "prompt_versions": sorted(prompt_versions),
         },
     )
 

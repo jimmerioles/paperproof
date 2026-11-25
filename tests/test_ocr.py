@@ -97,6 +97,24 @@ def test_v1_database_migrates_to_ocr_schema(tmp_path: Path) -> None:
             words_json TEXT NOT NULL,
             PRIMARY KEY (doc_id, pdf_page)
         );
+        CREATE TABLE extractions (
+            id TEXT PRIMARY KEY,
+            doc_id TEXT NOT NULL,
+            template TEXT NOT NULL,
+            field TEXT NOT NULL,
+            value_json TEXT,
+            quote TEXT,
+            pdf_page INTEGER,
+            printed_label TEXT,
+            boxes_json TEXT,
+            confidence REAL NOT NULL DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'pending',
+            verifier TEXT,
+            extractor TEXT NOT NULL,
+            reason TEXT,
+            created_at TEXT NOT NULL,
+            UNIQUE(doc_id, template, field)
+        );
         PRAGMA user_version = 1;
         """
     )
@@ -104,9 +122,11 @@ def test_v1_database_migrates_to_ocr_schema(tmp_path: Path) -> None:
     version = conn.execute("PRAGMA user_version").fetchone()[0]
     document_columns = {row[1] for row in conn.execute("PRAGMA table_info(documents)")}
     page_columns = {row[1] for row in conn.execute("PRAGMA table_info(pages)")}
+    extraction_columns = {row[1] for row in conn.execute("PRAGMA table_info(extractions)")}
     tables = {row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type = 'table'")}
     conn.close()
-    assert version == 3
+    assert version == 4
     assert {"ocr_pages", "ocr_confidence", "ocr_low_confidence"} <= document_columns
     assert {"ocr", "ocr_confidence", "ocr_engine"} <= page_columns
+    assert "meta_json" in extraction_columns
     assert "users" in tables

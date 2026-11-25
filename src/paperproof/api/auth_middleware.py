@@ -39,6 +39,12 @@ class AuthMiddleware(BaseHTTPMiddleware):
         path = request.url.path
         if path.startswith(STATIC_PREFIX):
             return await call_next(request)
+        if path in {"/healthz", "/favicon.ico"}:
+            request.state.session = None
+            request.state.csrf_token = ""
+            request.state.user = None
+            request.state.session_cookie_set = False
+            return await call_next(request)
 
         request.state.session = None
         request.state.csrf_token = ""

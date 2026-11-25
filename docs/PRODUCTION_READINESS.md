@@ -69,18 +69,18 @@ Current verdict: **demo-ready, not pilot-ready**.
 | --- | --- | --- | --- | --- |
 | Backup command | Yes | Yes | Done | `paperproof backup` |
 | Restore drill with matching counts | Yes | Yes | Done | `paperproof restore-drill`, CI |
-| Health check covers DB and disk | Yes | Yes | Partial | `/healthz` checks status only |
-| Schema migrations with versioning | Yes | Yes | Partial | `user_version` exists, only version 1 |
+| Health check covers DB and disk | Yes | Yes | Done | `/healthz` checks DB, renders, free disk |
+| Schema migrations with versioning | Yes | Yes | Partial | `user_version` with migrations to v4 |
 | Timeouts and retries for external calls | Yes | Yes | Partial | LLM only |
 | Idempotent ingestion and extraction | Yes | Yes | Done | SHA dedupe, upsert |
 | Background queue for large documents | No | Yes | Missing | Synchronous requests |
 | Graceful shutdown | Yes | Yes | Partial | Uvicorn default |
 | Rollback path for a bad deploy | Yes | Yes | Missing | No deploy yet |
-| Structured logs | Yes | Yes | Missing | Plain uvicorn logs |
-| Request IDs | Yes | Yes | Missing | None |
+| Structured logs | Yes | Yes | Done | JSON formatter, `logging.py` |
+| Request IDs | Yes | Yes | Done | `X-Request-ID`, error page |
 | Error tracking | Yes | Yes | Missing | None |
 | Metrics and dashboards | No | Yes | Missing | None |
-| LLM latency and cost tracking | Yes | Yes | Partial | Tokens in metadata, not surfaced |
+| LLM latency and cost tracking | Yes | Yes | Done | `extractions.meta_json`, audit |
 | Load test and performance budget | Yes | Yes | Missing | None |
 | Container build in CI | Yes | Yes | Done | `docker build` in CI |
 
@@ -141,6 +141,8 @@ Current verdict: **demo-ready, not pilot-ready**.
 - Authentication is one local admin. Roles, SSO, and tenant isolation are not built.
 - Login lockout is in memory, so it resets on restart and does not span multiple workers.
 - Backups are not encrypted and have no off-site copy.
+- Logs go to stdout only. There is no error tracker, metrics backend, or dashboard.
+- Cost estimates use configured list prices, not provider invoices or discounted rates.
 
 ## How to update this document
 

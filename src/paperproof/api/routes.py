@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import shutil
 import sqlite3
 import tempfile
 from pathlib import Path
 from urllib.parse import urlencode
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Request, UploadFile
-from fastapi.responses import FileResponse, RedirectResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 
 from paperproof.api.deps import csrf_protect, get_conn
 from paperproof.api.presenters import (
@@ -359,5 +360,30 @@ def audit_page(request: Request, conn: sqlite3.Connection = Depends(get_conn)):
 
 
 @router.get("/healthz")
-def healthz(conn: sqlite3.Connection = Depends(get_conn)):
-    return {"status": "ok"}
+def healthz(request: Request, conn: sqlite3.Connection = Depends(get_conn)):
+    settings = request.app.state.settings
+    checks = {"database": "ok", "renders": "ok", "disk": "ok"}
+    healthy = True
+    try:
+        conn.execute("SELECT 1").fetchone()
+    except sqlite3.Error:
+        checks["database"] = "error"
+        healthy = False
+    try:
+        with tempfile.NamedTemporaryFile(dir=settings.render_dir, prefix=".health-"):
+            pass
+    except OSError:
+        checks["renders"] = "error"
+        healthy = False
+    try:
+        free_mb = shutil.disk_usage(settings.data_dir).free / (1024 * 1024)
+        if free_mb < settings.health_min_free_mb:
+            checks["disk"] = "low"
+            healthy = False
+    except OSError:
+        checks["disk"] = "error"
+        healthy = False
+    return JSONResponse(
+        {"status": "ok" if healthy else "degraded", "checks": checks},
+        status_code=200 if healthy else 503,
+    )

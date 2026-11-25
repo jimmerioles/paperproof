@@ -13,7 +13,7 @@ from typing import Any
 
 from paperproof.config import Settings
 
-SCHEMA_VERSION = 3
+SCHEMA_VERSION = 4
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS documents (
@@ -100,6 +100,7 @@ CREATE TABLE IF NOT EXISTS extractions (
     verifier TEXT,
     extractor TEXT NOT NULL,
     reason TEXT,
+    meta_json TEXT NOT NULL DEFAULT '{}',
     created_at TEXT NOT NULL,
     reviewed_at TEXT,
     reviewer TEXT,
@@ -145,6 +146,9 @@ MIGRATIONS: dict[int, list[str]] = {
         "created_at TEXT NOT NULL, "
         "updated_at TEXT NOT NULL"
         ")",
+    ],
+    4: [
+        "ALTER TABLE extractions ADD COLUMN meta_json TEXT NOT NULL DEFAULT '{}'",
     ],
 }
 

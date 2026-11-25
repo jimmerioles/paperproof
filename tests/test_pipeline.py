@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import sqlite3
 from pathlib import Path
 
@@ -88,3 +89,26 @@ def test_scanned_lease_is_extracted(
     assert term.verifier == "exact"
     deposit = next(item for item in results if item.field == "security_deposit")
     assert deposit.value == 2900
+
+
+def test_extraction_records_duration_and_cost(
+    conn: sqlite3.Connection, settings: Settings, ingested
+) -> None:
+    results = extract_document(conn, settings, ingested.doc_id)
+    term = next(item for item in results if item.field == "term_months")
+    assert term.meta["provider"] == "local"
+    assert term.meta["model"] == "rules"
+    assert term.meta["prompt_version"] == "rules-v1"
+    assert term.meta["duration_ms"] >= 0
+    assert term.meta["cost_usd"] == 0.0
+    row = conn.execute(
+        "SELECT detail_json FROM audit_log WHERE action = 'document.extracted' "
+        "ORDER BY id DESC LIMIT 1"
+    ).fetchone()
+    assert row is not None
+    detail = json.loads(row["detail_json"])
+    assert detail["duration_ms"] >= 0
+    assert detail["tokens_in"] == 0
+    assert detail["tokens_out"] == 0
+    assert "rules" in detail["models"]
+    assert "rules-v1" in detail["prompt_versions"]
