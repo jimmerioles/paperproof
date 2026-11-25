@@ -13,6 +13,9 @@ data/
 .env
 .DS_Store
 
+# Private evaluation data and reports
+evals/private/
+
 # Editors
 .idea/
 .vscode/

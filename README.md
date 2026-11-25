@@ -198,11 +198,27 @@ Current rule baseline:
 | --- | --- |
 | Cases | 35 / 35 correct |
 | Answer accuracy | 100% |
+| Answer precision | 100% |
+| Answer recall | 100% |
 | Citations independently verified | 32 / 32 |
 | Exact (not fuzzy) citations | 32 / 32 |
+| Citation support (labeled) | not labeled on the synthetic set |
 | False confidence | 0 |
 
 The set includes a lease that is deliberately silent on three clauses and a scanned, image-only lease that must be recovered by OCR and cited.
+
+### Real documents
+
+The synthetic set proves the loop. It does not prove real-world accuracy. Run a private set with your own leases:
+
+```bash
+uv run paperproof eval \
+  --cases /secure/paperproof/real-cases.jsonl \
+  --docs /secure/paperproof/leases \
+  --report /secure/paperproof/report.csv
+```
+
+Cases support `value`, `contains`, `abstain`, `support`, `page`, and `quote_contains`. `support` is the human label for whether the verified quote actually proves the value. See [docs/EVALS.md](docs/EVALS.md) for the schema, labeling workflow, thresholds, and per-field metrics.
 
 ## Limits, stated plainly
 
@@ -247,7 +263,7 @@ make demo
 make serve
 ```
 
-The test suite covers quote normalization and fuzzy matching, chunking, rule parsers, PDF parsing, local OCR, ingestion idempotency, hybrid search, extraction, review flow, authentication and CSRF, backup and restore, JSON logging and request IDs, API rendering, upload, the LLM client with a mock transport, and the full golden set.
+The test suite covers quote normalization and fuzzy matching, chunking, rule parsers, PDF parsing, local OCR, ingestion idempotency, hybrid search, extraction, review flow, authentication and CSRF, backup and restore, JSON logging and request IDs, custom eval cases, API rendering, upload, the LLM client with a mock transport, and the full golden set.
 
 ## Production roadmap
 

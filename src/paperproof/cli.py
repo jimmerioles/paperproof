@@ -353,11 +353,31 @@ def eval_command(
     llm: bool = typer.Option(False, "--llm", help="Use the configured LLM extractor."),
     keep: bool = typer.Option(False, "--keep", help="Keep the temporary eval database."),
     verbose: bool = typer.Option(False, "--verbose", help="Print every case."),
+    cases: Path | None = typer.Option(
+        None, "--cases", help="JSONL case file. Defaults to evals/cases.jsonl."
+    ),
+    docs: Path | None = typer.Option(
+        None, "--docs", help="Directory of PDFs to evaluate. Defaults to the sample corpus."
+    ),
+    report: Path | None = typer.Option(
+        None, "--report", help="Write a per-case CSV report to this path."
+    ),
 ) -> None:
-    """Run the golden-set evaluation."""
+    """Run the golden set or a private real-document set."""
     from paperproof.evaluation import run_evals
 
-    result = run_evals(use_llm=llm, keep=keep, verbose=verbose)
+    try:
+        result = run_evals(
+            use_llm=llm,
+            keep=keep,
+            verbose=verbose,
+            cases_path=cases,
+            docs_dir=docs,
+            report_path=report,
+        )
+    except (OSError, ValueError) as exc:
+        console.print(f"[red]Eval failed:[/red] {exc}")
+        raise typer.Exit(code=1) from exc
     raise typer.Exit(code=0 if result.passed else 1)
 
 

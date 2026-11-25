@@ -21,13 +21,14 @@ Current verdict: **demo-ready, not pilot-ready**.
 | Scanned pages are OCR'd locally | Yes | Yes | Done | `ingest/ocr.py`, `tests/test_ocr.py` |
 | OCR confidence is visible per page | Yes | Yes | Done | Document banner, source view, `ocr-pill` |
 | Synthetic golden set passes in CI | Yes | Yes | Done | `evals/cases.jsonl`, CI |
+| Private case-set importer with per-field metrics | Yes | Yes | Done | `paperproof eval --cases --docs --report` |
 | 200+ labeled fields from real leases | Yes | Yes | Missing | No real corpus yet |
-| Per-field accuracy, precision, recall, and false confidence | Yes | Yes | Missing | Aggregate only today |
+| Per-field accuracy, precision, recall, and false confidence | Yes | Yes | Done | `paperproof eval`, CSV report |
 | LLM mode evaluated against a real provider | Yes | Yes | Partial | Mock transport tests only |
 | Prompt and model version stored per extraction | Yes | Yes | Partial | Model in audit meta, prompt is not versioned |
 | Regression gate fails on a wrong answer or unverified citation | Yes | Yes | Done | `paperproof eval`, CI |
 | Abstention is measured, not just counted | Yes | Yes | Partial | Counted in the eval, not per field |
-| Citation support is labeled by a human | Yes | Yes | Missing | Existence is verified, support is not scored |
+| Citation support is labeled by a human | Yes | Yes | Partial | Harness supports labels, real set not labeled |
 
 ## Security
 

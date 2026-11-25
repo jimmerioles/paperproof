@@ -15,8 +15,9 @@ Working today:
 - Backup, restore, and a restore drill that runs in CI.
 - JSON request logs, request IDs, health checks, and per-field cost tracking.
 - Docker Compose deployment with Caddy TLS, healthchecks, upgrade, and rollback docs.
+- Private case-set eval importer with per-field precision, recall, support labels, and a CSV report.
 - Offline rule extractor and an OpenAI-compatible LLM extractor.
-- 35 case synthetic golden set, 69 tests, CI, and a source-available license.
+- 35 case synthetic golden set, 72 tests, CI, and a source-available license.
 
 Missing for a pilot:
 
