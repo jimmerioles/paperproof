@@ -14,6 +14,8 @@ The source view is the other half of the contract: the quote sits beside the pag
 
 Paperproof is a working local slice, not yet pilot-ready. The roadmap sequences the remaining work by risk, and the readiness checklist tracks the hard gates.
 
+The active milestone is [M1: Pilot-ready](https://github.com/jimmerioles/paperproof/milestone/1).
+
 - [Roadmap](ROADMAP.md)
 - [Production readiness](docs/PRODUCTION_READINESS.md)
 - [Working in short sessions](docs/WORKFLOW.md)
